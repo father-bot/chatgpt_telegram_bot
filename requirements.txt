@@ -1,0 +1,2 @@
+python-telegram-bot==20.0a0
+revChatGPT==0.0.14

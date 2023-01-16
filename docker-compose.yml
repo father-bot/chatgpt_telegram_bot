@@ -1,12 +1,10 @@
 version: "3"
 
 services:
-  chatgpt_telegram_bot:
+  llm_telegram_bot:
     container_name: chatgpt_telegram_bot
     command: python3 bot.py
     restart: always
-    env_file:
-      - config.env
     build:
       context: "."
       dockerfile: Dockerfile    

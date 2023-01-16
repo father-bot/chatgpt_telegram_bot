@@ -5,17 +5,19 @@ import html
 import json
 import time
 
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CallbackContext,
     CommandHandler,
     MessageHandler,
     PicklePersistence,
+    CallbackQueryHandler,
     filters
 )
 from telegram.constants import ParseMode, ChatAction
 
+import chatgpt
 import utils
 import config
 
@@ -89,6 +91,39 @@ async def reset_handle(update: Update, context: CallbackContext):
     context.user_data["chatgpt"].reset_context()
     await update.message.reply_text("Chat context is reset ✅")
 
+    chat_mode_key = context.user_data["chatgpt"].chat_mode
+    await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode_key]['welcome_message']}", parse_mode=ParseMode.HTML)
+
+
+async def show_chat_modes_handle(update: Update, context: CallbackContext):
+    utils.init_user(update, context)
+    context.user_data["last_interation_timestamp"] = time.time()
+
+    keyboard = []
+    for mode_key, mode_dict in chatgpt.CHAT_MODES.items():
+        keyboard.append([InlineKeyboardButton(mode_dict["name"], callback_data=f"set_mode|{mode_key}")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text("Choose chat mode:", reply_markup=reply_markup)
+
+
+async def set_chat_mode_handle(update: Update, context: CallbackContext):
+    query = update.callback_query
+
+    await query.answer()
+    await query.edit_message_text(text="See you next time!")
+
+    chat_mode_key = query.data.split("|")[1]
+
+    context.user_data["chatgpt"].set_chat_mode(chat_mode_key)
+    context.user_data["chatgpt"].reset_context()
+    await query.edit_message_text(
+        f"<b>{chatgpt.CHAT_MODES[chat_mode_key]['name']}</b> chat mode is set",
+        parse_mode=ParseMode.HTML
+    )
+
+    await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode_key]['welcome_message']}", parse_mode=ParseMode.HTML)
+
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
@@ -125,9 +160,13 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
+
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("reset", reset_handle, filters=user_filter))
+
+    application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
+    application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_mode"))
     
     application.add_error_handler(error_handler)
     

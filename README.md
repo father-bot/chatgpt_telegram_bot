@@ -9,9 +9,9 @@ This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works
 - Low latency replies (it usually takes about 3-5 seconds) 
 - No request limits
 - Code highlighting
+- Different chat modes (👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert)
 - `/retry` command to regenerate last bot answer
 - Control of allowed Telegram users
-- *Next up*: Different chat modes (code writing helper, therapist, movie expert, etc.)
 
 ## Setup
 1. Get your [OpenAI API](https://openai.com/api/) key

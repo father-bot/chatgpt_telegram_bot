@@ -10,7 +10,7 @@ import config
 def init_user(update: Update, context: CallbackContext):
     # init chatgpt
     if "chatgpt" not in context.user_data:
-        context.user_data["chatgpt"] = ChatGPT(openai_api_key=config.openai_api_key)
+        context.user_data["chatgpt"] = ChatGPT(chat_mode="assistant")
 
     if "last_interation_timestamp" not in context.user_data:
         context.user_data["last_interation_timestamp"] = time.time()

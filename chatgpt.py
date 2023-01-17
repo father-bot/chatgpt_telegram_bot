@@ -26,48 +26,56 @@ CHAT_MODES = {
 
 
 class ChatGPT:
-    def __init__(self, chat_mode="assistant"):
-        self.chat_mode = chat_mode
-        self.context = []
+    def __init__(self):
+        pass
     
-    def send_message(self, message):
-        prompt = self._generate_prompt(message)
-        r = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
-            temperature=0.7,
-            max_tokens=1000,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-        )
-        answer = r.choices[0].text
-        answer = answer.strip()
-
-        # update context
-        self.context.append({"user": message, "chatgpt": answer})
-
-        return answer, prompt
-
-    def reset_context(self):
-        self.context = []
-
-    def set_chat_mode(self, chat_mode):
+    def send_message(self, message, chat_context=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
-        self.chat_mode = chat_mode
+        chat_context_len_before = len(chat_context)
+        answer = None
+        while answer is None:
+            prompt = self._generate_prompt(message, chat_context, chat_mode)
+            try:
+                r = openai.Completion.create(
+                    engine="text-davinci-003",
+                    prompt=prompt,
+                    temperature=0.7,
+                    max_tokens=1000,
+                    top_p=1,
+                    frequency_penalty=0,
+                    presence_penalty=0,
+                )
+                answer = r.choices[0].text
+                answer = answer.strip()
 
-    def _generate_prompt(self, message):
-        prompt = CHAT_MODES[self.chat_mode]["prompt_start"]
+                n_used_tokens = r.usage.total_tokens
+
+            except openai.error.InvalidRequestError as e:  # too many tokens
+                if len(chat_context) == 0:
+                    raise ValueError("chat_context is reduced to zero, but still has too many tokens to make completion") from e
+
+                # forget first message in chat_context
+                chat_context = chat_context[1:]
+
+        n_first_chat_context_messages_removed = chat_context_len_before - len(chat_context)
+
+        # update chat_context
+        chat_context.append({"user": message, "chatgpt": answer})
+
+        return answer, prompt, chat_context, n_used_tokens, n_first_chat_context_messages_removed
+
+    def _generate_prompt(self, message, chat_context, chat_mode):
+        prompt = CHAT_MODES[chat_mode]["prompt_start"]
         prompt += "\n\n"
 
-        # chat history
-        if len(self.context) > 0:
+        # add chat context
+        if len(chat_context) > 0:
             prompt += "Chat:\n"
-            for context_item in self.context:
-                prompt += f"User: {context_item['user']}\n"
-                prompt += f"ChatGPT: {context_item['chatgpt']}\n"
+            for chat_context_item in chat_context:
+                prompt += f"User: {chat_context_item['user']}\n"
+                prompt += f"ChatGPT: {chat_context_item['chatgpt']}\n"
 
         # current message
         prompt += f"User: {message}\n"

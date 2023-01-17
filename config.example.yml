@@ -2,4 +2,4 @@ telegram_token: ""
 openai_api_key: ""
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone
 persistence_path: "./persistence.pkl"  # path where to store user data
-reset_timeout: 600  # chat context is reset after timeout (in seconds)
+new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)

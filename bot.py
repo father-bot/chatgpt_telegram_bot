@@ -26,10 +26,11 @@ import config
 logger = logging.getLogger(__name__)
 
 HELP_MESSAGE = """Commands:
-⚪ /retry – regenerate last bot answer
-⚪ /reset – reset chat context
-⚪ /mode – select chat mode
-⚪ /help – show help
+⚪ /retry – Regenerate last bot answer
+⚪ /new – Start new dialog
+⚪ /mode – Select chat mode
+⚪ /balance – Show balance
+⚪ /help – Show help
 """
 
 
@@ -54,45 +55,64 @@ async def help_handle(update: Update, context: CallbackContext):
 async def retry_handle(update: Update, context: CallbackContext):
     context.user_data["last_interation_timestamp"] = time.time()
 
-    if len(context.user_data["chatgpt"].context) == 0:
+    if len(context.user_data["chat_context"]) == 0:
         await update.message.reply_text("No message to retry 🤷‍♂️")
         return
 
-    last_message = context.user_data["chatgpt"].context.pop()
-    await message_handle(update, context, message=last_message["user"], use_reset_timeout=False)
+    last_chat_context_item = context.user_data["chat_context"].pop()
+    await message_handle(update, context, message=last_chat_context_item["user"], use_new_dialog_timeout=False)
 
 
-async def message_handle(update: Update, context: CallbackContext, message=None, use_reset_timeout=True):
+async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
     utils.init_user(update, context)
 
-    # reset timeout
-    if use_reset_timeout:
-        if time.time() - context.user_data["last_interation_timestamp"] > config.reset_timeout:
-            context.user_data["chatgpt"].reset_context()
-            await update.message.reply_text("Chat context is reset due to timeout ✅")
-        context.user_data["last_interation_timestamp"] = time.time()
+    # new dialog timeout
+    if use_new_dialog_timeout:
+        if time.time() - context.user_data["last_interation_timestamp"] > config.new_dialog_timeout:
+            context.user_data["chat_context"] = []
+            await update.message.reply_text("Starting new dialog due to timeout ✅")
+    context.user_data["last_interation_timestamp"] = time.time()
 
+    # send typing action
     await update.message.chat.send_action(action="typing")
 
     try:
         message = message or update.message.text
-        answer, prompt = context.user_data["chatgpt"].send_message(message)
-        await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
+        answer, prompt, chat_context, n_used_tokens, n_first_chat_context_messages_removed = chatgpt.ChatGPT().send_message(
+            message,
+            chat_context=context.user_data["chat_context"],
+            chat_mode=context.user_data["chat_mode"]
+        )
     except Exception as e:
         error_text = f"Something went wrong during completion. Reason: {e}"
         logger.error(error_text)
         await update.message.reply_text(error_text)
+        return
+
+    # update user data
+    context.user_data["chat_context"] = chat_context
+    context.user_data["total_n_used_tokens"] += n_used_tokens
+
+    # send message if some messages were removed from the context
+    if n_first_chat_context_messages_removed > 0:
+        if n_first_chat_context_messages_removed == 1:
+            text = "✍️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed from the context.\n Send /new command to start new dialog"
+        else:
+            text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_chat_context_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
+    await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
 
 
-async def reset_handle(update: Update, context: CallbackContext):
+async def new_dialog_handle(update: Update, context: CallbackContext):
     utils.init_user(update, context)
     context.user_data["last_interation_timestamp"] = time.time()
 
-    context.user_data["chatgpt"].reset_context()
-    await update.message.reply_text("Chat context is reset ✅")
+    context.user_data["chat_context"] = []
+    await update.message.reply_text("Starting new dialog ✅")
 
-    chat_mode_key = context.user_data["chatgpt"].chat_mode
-    await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode_key]['welcome_message']}", parse_mode=ParseMode.HTML)
+    chat_mode = context.user_data["chat_mode"]
+    await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
@@ -100,29 +120,41 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     context.user_data["last_interation_timestamp"] = time.time()
 
     keyboard = []
-    for mode_key, mode_dict in chatgpt.CHAT_MODES.items():
-        keyboard.append([InlineKeyboardButton(mode_dict["name"], callback_data=f"set_mode|{mode_key}")])
+    for chat_mode, chat_mode_dict in chatgpt.CHAT_MODES.items():
+        keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Choose chat mode:", reply_markup=reply_markup)
+    await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
     query = update.callback_query
-
     await query.answer()
-    await query.edit_message_text(text="See you next time!")
 
-    chat_mode_key = query.data.split("|")[1]
+    chat_mode = query.data.split("|")[1]
 
-    context.user_data["chatgpt"].set_chat_mode(chat_mode_key)
-    context.user_data["chatgpt"].reset_context()
+    context.user_data["chat_mode"] = chat_mode
+    context.user_data["chat_context"] = []
+
     await query.edit_message_text(
-        f"<b>{chatgpt.CHAT_MODES[chat_mode_key]['name']}</b> chat mode is set",
+        f"<b>{chatgpt.CHAT_MODES[chat_mode]['name']}</b> chat mode is set",
         parse_mode=ParseMode.HTML
     )
 
-    await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode_key]['welcome_message']}", parse_mode=ParseMode.HTML)
+    await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+
+
+async def show_balance_handle(update: Update, context: CallbackContext):
+    utils.init_user(update, context)
+    context.user_data["last_interation_timestamp"] = time.time()
+
+    total_n_used_tokens = context.user_data['total_n_used_tokens']
+    total_spent_dollars = total_n_used_tokens * (0.01 / 1000)
+
+    text = f"You spent <b>{total_spent_dollars:.03f}$</b>\n"
+    text += f"You used <b>{total_n_used_tokens}</b> tokens <i>(price: 0.01$ per 1000 tokens)</i>\n"
+
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
@@ -163,10 +195,12 @@ def run_bot() -> None:
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
-    application.add_handler(CommandHandler("reset", reset_handle, filters=user_filter))
-
+    application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
+    
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
-    application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_mode"))
+    application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
+
+    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
     
     application.add_error_handler(error_handler)
     

@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 HELP_MESSAGE = """Commands:
 ⚪ /retry – regenerate last bot answer
 ⚪ /reset – reset chat context
+⚪ /mode – select chat mode
 ⚪ /help – show help
 """
 
@@ -81,7 +82,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         error_text = f"Something went wrong during completion. Reason: {e}"
         logger.error(error_text)
         await update.message.reply_text(error_text)
-        
+
 
 async def reset_handle(update: Update, context: CallbackContext):
     utils.init_user(update, context)

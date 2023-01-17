@@ -12,6 +12,7 @@ This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works
 - Different chat modes (👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert)
 - `/retry` command to regenerate last bot answer
 - Control of allowed Telegram users
+- *Next up*: warn user that the size of the context is close to the maximum
 
 ## Setup
 1. Get your [OpenAI API](https://openai.com/api/) key

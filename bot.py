@@ -76,13 +76,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     try:
         message = message or update.message.text
         answer, prompt = context.user_data["chatgpt"].send_message(message)
+        await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
     except Exception as e:
         error_text = f"Something went wrong during completion. Reason: {e}"
         logger.error(error_text)
         await update.message.reply_text(error_text)
-
-    await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
-
+        
 
 async def reset_handle(update: Update, context: CallbackContext):
     utils.init_user(update, context)

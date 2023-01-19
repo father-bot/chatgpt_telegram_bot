@@ -129,5 +129,7 @@ dmypy.json
 .pyre/
 
 # Custom
-config.yml
-*.pkl
+config/config.yml
+config/config.env
+
+docker-compose.dev.yml

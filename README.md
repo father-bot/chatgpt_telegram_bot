@@ -1,4 +1,8 @@
-# ChatGPT Telegram Bot (**fast** and **no limits**)
+<div align="center">
+<h1><b>ChatGPT Telegram Bot</b><br>Fast. No daily limits. Special chat modes</h1>
+<img src="https://raw.githubusercontent.com/karfly/chatgpt_telegram_bot/main/static/header.png" align="center" style="width: 100%" />
+</div>
+
 We all love [chat.openai.com](https://chat.openai.com), but...
 
 It's TERRIBLY laggy, has daily limits, and is only accessible through an archaic web interface.
@@ -9,7 +13,7 @@ This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works
 - Low latency replies (it usually takes about 3-5 seconds) 
 - No request limits
 - Code highlighting
-- Different chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert. More soon
+- Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert. More soon
 - List of allowed Telegram users
 - Track $ balance spent on OpenAI API
 

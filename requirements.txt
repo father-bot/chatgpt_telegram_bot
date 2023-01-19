@@ -1,3 +1,5 @@
 python-telegram-bot==20.0a0
-openai
-PyYAML
+openai>=0.26.1
+PyYAML==6.0
+pymongo==4.3.3
+python-dotenv==0.21.0

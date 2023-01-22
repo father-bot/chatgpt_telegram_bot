@@ -5,6 +5,7 @@ import html
 import json
 from datetime import datetime
 
+import telegram
 from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,

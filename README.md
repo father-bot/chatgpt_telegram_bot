@@ -4,11 +4,15 @@
 <img src="https://raw.githubusercontent.com/karfly/chatgpt_telegram_bot/main/static/header.png" align="center" style="width: 100%" />
 </div>
 
-We all love [chat.openai.com](https://chat.openai.com), but...
+<p align="center">
+<a href="https://t.me/chatgpt_karfly_bot" alt="Run Telegram Bot shield"><img src="https://img.shields.io/badge/RUN-Telegram%20Bot-blue" /></a>
+</p>
 
-It's TERRIBLY laggy, has daily limits, and is only accessible through an archaic web interface.
+We all love [chat.openai.com](https://chat.openai.com), but... It's TERRIBLY laggy, has daily limits, and is only accessible through an archaic web interface.
 
 This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works great.**
+
+You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/chatgpt_karfly_bot)
 
 ## Features
 - Low latency replies (it usually takes about 3-5 seconds) 

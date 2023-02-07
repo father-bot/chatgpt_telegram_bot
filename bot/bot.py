@@ -84,6 +84,11 @@ async def retry_handle(update: Update, context: CallbackContext):
 
 
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+    # check if message is edited
+    if update.edited_message is not None:
+        await edited_message_handle(update, context)
+        return
+        
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
 
@@ -197,7 +202,12 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
-async def error_handler(update: Update, context: CallbackContext) -> None:
+async def edited_message_handle(update: Update, context: CallbackContext):
+    text = "🥲 Unfortunately, message <b>editing</b> is not supported"
+    await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
+
+
+async def error_handle(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
     # collect error message
@@ -239,7 +249,7 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
     
-    application.add_error_handler(error_handler)
+    application.add_error_handler(error_handle)
     
     # start the bot
     application.run_polling()

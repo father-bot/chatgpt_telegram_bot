@@ -17,7 +17,7 @@ services:
     build:
       context: "."
     volumes:
-      - ${CONFIG_PATH:-./config}:/code/
+      - ${CONFIG_PATH:-./config}:/code/config
     depends_on:
       - mongo
 

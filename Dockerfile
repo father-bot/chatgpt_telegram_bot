@@ -12,4 +12,4 @@ COPY --from=builder /code /code
 
 WORKDIR /code
 
-CMD [ "bash" ]
+CMD [ "/code/.venv/bin/python", "/code/bot/bot.py" ]

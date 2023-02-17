@@ -127,6 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode/
+caches/
+.idea/
+__pypackages__
+.pdm.toml
+temp.py
 
 # Custom
 config/config.yml

@@ -16,6 +16,8 @@ services:
     restart: always
     build:
       context: "."
+    volumes:
+      - ${CONFIG_PATH:-./config}:/code/
     depends_on:
       - mongo
 

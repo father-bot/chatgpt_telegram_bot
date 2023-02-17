@@ -210,19 +210,25 @@ async def edited_message_handle(update: Update, context: CallbackContext):
 async def error_handle(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
-    # collect error message
-    tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
-    tb_string = "".join(tb_list)[:2000]
-    update_str = update.to_dict() if isinstance(update, Update) else str(update)
-    message = (
-        f"An exception was raised while handling an update\n"
-        f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
-        "</pre>\n\n"
-        f"<pre>{html.escape(tb_string)}</pre>"
-    )
+    try:
+        # collect error message
+        tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+        tb_string = "".join(tb_list)[:2000]
+        update_str = update.to_dict() if isinstance(update, Update) else str(update)
+        message = (
+            f"An exception was raised while handling an update\n"
+            f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+            "</pre>\n\n"
+            f"<pre>{html.escape(tb_string)}</pre>"
+        )
 
-    await context.bot.send_message(update.effective_chat.id, message, parse_mode=ParseMode.HTML)
-
+        # split text into multiple messages due to 4096 character limit
+        message_chunk_size = 4000
+        message_chunks = [message[i:i + message_chunk_size] for i in range(0, len(message), message_chunk_size)]
+        for message_chunk in message_chunks:
+            await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
+    except:
+        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
 def run_bot() -> None:
     application = (

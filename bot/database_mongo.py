@@ -4,12 +4,10 @@ import pymongo
 import uuid
 from datetime import datetime
 
-import config
 
-
-class Database:
-    def __init__(self):
-        self.client = pymongo.MongoClient(config.mongodb_uri)
+class MongoDataBase:
+    def __init__(self, mongodb_uri):
+        self.client = pymongo.MongoClient(mongodb_uri)
         self.db = self.client["chatgpt_telegram_bot"]
 
         self.user_collection = self.db["user"]
@@ -23,32 +21,15 @@ class Database:
                 raise ValueError(f"User {user_id} does not exist")
             else:
                 return False
-        
+
     def add_new_user(
-        self,
-        user_id: int,
-        chat_id: int,
-        username: str = "",
-        first_name: str = "",
-        last_name: str = "",
+            self,
+            user_id: int,
+            chat_id: int,
+            username: str = "",
+            first_name: str = "",
+            last_name: str = "",
     ):
-        user_dict = {
-            "_id": user_id,
-            "chat_id": chat_id,
-
-            "username": username,
-            "first_name": first_name,
-            "last_name": last_name,
-
-            "last_interaction": datetime.now(),
-            "first_seen": datetime.now(),
-            
-            "current_dialog_id": None,
-            "current_chat_mode": "assistant",
-
-            "n_used_tokens": 0
-        }
-
         if not self.check_if_user_exists(user_id):
             self.user_collection.insert_one(user_dict)
 
@@ -94,15 +75,25 @@ class Database:
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
 
-        dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})               
+        dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})
         return dialog_dict["messages"]
 
-    def set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
-        self.check_if_user_exists(user_id, raise_exception=True)
+    def append_dialog_message(self, user_id: int, new_dialog_message: dict, dialog_id: Optional[str] = None):
+        new_messages = self.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message]
+        self.__set_dialog_messages(user_id, new_messages, dialog_id)
 
-        if dialog_id is None:
-            dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
-        
+    def remove_dialog_last_message(self, user_id: int, dialog_id: Optional[str] = None):
+        dialog_messages = self.get_dialog_messages(user_id, dialog_id)
+        if len(dialog_messages) == 0:
+            return None
+
+        last_dialog_message = dialog_messages.pop()
+        self.__set_dialog_messages(user_id, dialog_messages, dialog_id)
+        return last_dialog_message
+
+    def __set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
+        self.check_if_user_exists(user_id, raise_exception=True)
+        dialog_id = dialog_id or self.get_user_attribute(user_id, "current_dialog_id")
         self.dialog_collection.update_one(
             {"_id": dialog_id, "user_id": user_id},
             {"$set": {"messages": dialog_messages}}

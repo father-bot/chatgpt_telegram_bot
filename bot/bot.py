@@ -427,7 +427,7 @@ def run_bot() -> None:
     application.add_error_handler(error_handle)
 
     # start the bot
-    application.run_polling()
+    application.run_polling(stop_signals=None)
 
 
 if __name__ == "__main__":

@@ -4,12 +4,10 @@ import pymongo
 import uuid
 from datetime import datetime
 
-import config
 
-
-class Database:
-    def __init__(self):
-        self.client = pymongo.MongoClient(config.mongodb_uri)
+class MongoDataBase:
+    def __init__(self, mongodb_uri):
+        self.client = pymongo.MongoClient(mongodb_uri)
         self.db = self.client["chatgpt_telegram_bot"]
 
         self.user_collection = self.db["user"]
@@ -25,12 +23,12 @@ class Database:
                 return False
 
     def add_new_user(
-        self,
-        user_id: int,
-        chat_id: int,
-        username: str = "",
-        first_name: str = "",
-        last_name: str = "",
+            self,
+            user_id: int,
+            chat_id: int,
+            username: str = "",
+            first_name: str = "",
+            last_name: str = "",
     ):
         user_dict = {
             "_id": user_id,
@@ -115,9 +113,14 @@ class Database:
         dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})
         return dialog_dict["messages"]
 
-    def set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
-        self.check_if_user_exists(user_id, raise_exception=True)
+    def append_dialog_message(self, user_id: int, new_dialog_message: dict, dialog_id: Optional[str] = None):
+        new_messages = self.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message]
+        self.__set_dialog_messages(user_id, new_messages, dialog_id)
 
+
+    def __set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
+        self.check_if_user_exists(user_id, raise_exception=True)
+        
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
 

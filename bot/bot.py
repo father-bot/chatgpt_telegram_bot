@@ -1,3 +1,4 @@
+import argparse
 import os
 import logging
 import asyncio
@@ -9,6 +10,7 @@ import pydub
 from pathlib import Path
 from datetime import datetime
 
+import openai
 import telegram
 from telegram import (
     Update,
@@ -30,12 +32,13 @@ from telegram.ext import (
 from telegram.constants import ParseMode, ChatAction
 
 import config
+import database_sqlite
+import database_mongo
+import chatgpt
 import database
-import openai_utils
-
 
 # setup
-db = database.Database()
+db = None
 logger = logging.getLogger(__name__)
 user_semaphores = {}
 
@@ -61,7 +64,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             update.message.chat_id,
             username=user.username,
             first_name=user.first_name,
-            last_name= user.last_name
+            last_name=user.last_name
         )
         db.start_new_dialog(user.id)
 
@@ -119,13 +122,10 @@ async def retry_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
-    if len(dialog_messages) == 0:
+    last_dialog_message = db.remove_dialog_last_message(user_id)
+    if last_dialog_message is None:
         await update.message.reply_text("No message to retry 🤷‍♂️")
         return
-
-    last_dialog_message = dialog_messages.pop()
-    db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
 
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
@@ -456,12 +456,28 @@ async def post_init(application: Application):
     ])
 
 def run_bot() -> None:
+    global db
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--database", type=str)
+    parser.add_argument("-p", "--proxy", type=str)
+    curr_args = parser.parse_args()
+    if curr_args.database == "sqlite":
+        db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
+    else:
+        db = database_mongo.MongoDataBase(config.mongodb_uri)
+
+    telegram_proxy = None
+    if curr_args.proxy and len(curr_args.proxy) > 0:
+        openai.proxy = curr_args.proxy
+        telegram_proxy = f"http://{curr_args.proxy}"
+
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))
         .post_init(post_init)
+        .proxy_url(telegram_proxy)
         .build()
     )
 

@@ -1,0 +1,17 @@
+[tool.pdm]
+
+[project]
+name = "chatgpt_telegram_bot"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "karfly", email = "karfly@yandex.ru"},
+]
+dependencies = ["python-telegram-bot==20.0a0", "openai>=0.26.1", "PyYAML==6.0", "pymongo==4.3.3", "python-dotenv==0.21.0"]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"

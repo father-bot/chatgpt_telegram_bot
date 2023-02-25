@@ -43,7 +43,7 @@ mv config/config.example.env config/config.env
 🔥 And now **run**:
 
 ```bash
-docker-compose --env-file config/config.env up --build
+docker-compose -f docker-compose.yml up --build
 ```
 
 ## References

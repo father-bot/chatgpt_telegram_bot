@@ -44,16 +44,11 @@ class ChatGPT:
         while answer is None:
             prompt = self._generate_prompt(message, dialog_messages, chat_mode)
             try:
-                r = openai.Completion.create(
-                    engine="text-davinci-003",
-                    prompt=prompt,
-                    temperature=0.7,
-                    max_tokens=1000,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0,
+                r = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=prompt
                 )
-                answer = r.choices[0].text
+                answer = r['choices'][0]['message']['content']
                 answer = self._postprocess_answer(answer)
 
                 n_used_tokens = r.usage.total_tokens
@@ -70,21 +65,26 @@ class ChatGPT:
         return answer, prompt, n_used_tokens, n_first_dialog_messages_removed
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
-        prompt = CHAT_MODES[chat_mode]["prompt_start"]
-        prompt += "\n\n"
+        msg_mode = self._get_msg("system", CHAT_MODES[chat_mode]["prompt_start"])
+        msg_list = [msg_mode]
 
         # add chat context
         if len(dialog_messages) > 0:
-            prompt += "Chat:\n"
             for dialog_message in dialog_messages:
-                prompt += f"User: {dialog_message['user']}\n"
-                prompt += f"ChatGPT: {dialog_message['bot']}\n"
+                msg_list.append(self._get_msg("user", dialog_message['user']))
+                msg_list.append(self._get_msg("assistant", dialog_message['bot']))
 
         # current message
-        prompt += f"User: {message}\n"
-        prompt += "ChatGPT: "
+        msg_list.append(self._get_msg("user", message))
+        print(msg_list)
 
-        return prompt
+        return msg_list
+    
+    def _get_msg(self, role, content): 
+        return {
+        "role" : role,
+        "content" : content
+    }
 
     def _postprocess_answer(self, answer):
         answer = answer.strip()

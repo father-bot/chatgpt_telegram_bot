@@ -14,11 +14,15 @@ This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works
 
 You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/chatgpt_karfly_bot)
 
+## News
+- *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction). It's enabled by default and can be disabled with `use_chatgpt_api` option in config. Don't forget to **rebuild** you docker image (`--build`).
+
 ## Features
 - Low latency replies (it usually takes about 3-5 seconds) 
 - No request limits
 - Code highlighting
 - Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert. More soon
+- Support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction)
 - List of allowed Telegram users
 - Track $ balance spent on OpenAI API
 

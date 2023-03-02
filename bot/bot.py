@@ -105,7 +105,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     try:
         message = message or update.message.text
 
-        answer, prompt, n_used_tokens, n_first_dialog_messages_removed = chatgpt.ChatGPT().send_message(
+        chatgpt_instance = chatgpt.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
+        answer, n_used_tokens, n_first_dialog_messages_removed = chatgpt_instance.send_message(
             message,
             dialog_messages=db.get_dialog_messages(user_id, dialog_id=None),
             chat_mode=db.get_user_attribute(user_id, "current_chat_mode"),
@@ -194,10 +195,12 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     n_used_tokens = db.get_user_attribute(user_id, "n_used_tokens")
-    n_spent_dollars = n_used_tokens * (0.02 / 1000)
+
+    price = 0.002 if config.use_chatgpt_api else 0.02
+    n_spent_dollars = n_used_tokens * (price / 1000)
 
     text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
-    text += f"You used <b>{n_used_tokens}</b> tokens <i>(price: 0.02$ per 1000 tokens)</i>\n"
+    text += f"You used <b>{n_used_tokens}</b> tokens <i>(price: {price}$ per 1000 tokens)</i>\n"
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 

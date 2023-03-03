@@ -30,6 +30,9 @@ CHAT_MODES = {
     },
 }
 
+for mode in config.modes:
+    CHAT_MODES[mode] = config.modes[mode]
+
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
     "max_tokens": 1000,

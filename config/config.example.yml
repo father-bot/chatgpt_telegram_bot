@@ -3,3 +3,8 @@ openai_api_key: ""
 use_chatgpt_api: true
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
+modes:
+  svg:
+    name: "👩‍🎨 SVG designer"
+    welcome_message: "👩‍🎨 Hi, I'm <b>ChatGPT SVG designer</b>. How can I help you?"
+    prompt_start: "I would like you to act as an SVG designer. I will ask you to create images, and you will come up with SVG code for the image and then give me a response that contains only an image SVG tag. Do not put the code inside a code block. Send only the code, so no text."

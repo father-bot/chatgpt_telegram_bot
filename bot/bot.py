@@ -43,6 +43,10 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             first_name=user.first_name,
             last_name= user.last_name
         )
+        db.start_new_dialog(user.id)
+
+    if db.get_user_attribute(user.id, "current_dialog_id") is None:
+        db.start_new_dialog(user.id)
 
 
 async def start_handle(update: Update, context: CallbackContext):

@@ -51,8 +51,6 @@ class Database:
 
         if not self.check_if_user_exists(user_id):
             self.user_collection.insert_one(user_dict)
-            
-        # TODO: maybe start a new dialog here?
 
     def start_new_dialog(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)

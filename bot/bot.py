@@ -366,8 +366,34 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
             except telegram.error.BadRequest:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
+
+
+async def error_handle_except_network(update: Update, context: CallbackContext) -> None:
+    logger.error(msg="Exception while handling an update:", exc_info=context.error)
+
+    if isinstance(context.error, NetworkError):
+        logger.debug(msg="ignore_network_error=True, supress network error")
+        return
+
+    try:
+        # collect error message
+        tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+        tb_string = "".join(tb_list)[:2000]
+        update_str = update.to_dict() if isinstance(update, Update) else str(update)
+        message = (
+            f"An exception was raised while handling an update\n"
+            f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+            "</pre>\n\n"
+            f"<pre>{html.escape(tb_string)}</pre>"
+        )
+
+        # split text into multiple messages due to 4096 character limit
+        message_chunk_size = 4000
+        message_chunks = [message[i:i + message_chunk_size] for i in range(0, len(message), message_chunk_size)]
+        for message_chunk in message_chunks:
+            await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
     except NetworkError as e:
-        print(f"NetworkError: {e}")
+        logger.error(msg="Exception while handling an update:", exc_info=context.error)
     except:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
@@ -427,7 +453,10 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
-    application.add_error_handler(error_handle)
+    if config.ignore_network_error:
+        application.add_error_handler(error_handle_except_network)
+    else:
+        application.add_error_handler(error_handle)
 
     # start the bot
     application.run_polling(stop_signals=None)

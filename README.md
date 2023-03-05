@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
+<a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
 </p>
 
 <p align="center">

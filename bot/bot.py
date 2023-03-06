@@ -234,8 +234,8 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
         message_chunks = [message[i:i + message_chunk_size] for i in range(0, len(message), message_chunk_size)]
         for message_chunk in message_chunks:
             await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
-    except:
-        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
+    except Exception as e:
+        await context.bot.send_message(update.effective_chat.id, f"{e.__class__.__name__} failure in error handler")
 
 def run_bot() -> None:
     application = (

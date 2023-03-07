@@ -40,14 +40,18 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 
 3. Edit `config/config.example.yml` to set your tokens and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
 ```bash
-mv config/config.example.yml config/config.yml
-mv config/config.example.env config/config.env
+cp config/config.example.yml config/config.yml
+cp config/config.example.env config/config.env
 ```
 
 🔥 And now **run**:
 
 ```bash
+
 docker-compose --env-file config/config.env up --build
+
+docker-compose --env-file config/config.env -f docker-compose.redis.yml up --build
+
 ```
 
 ## References

@@ -1,6 +1,7 @@
 version: "3"
 
 services:
+
   mongo:
     container_name: mongo
     image: mongo:latest
@@ -8,7 +9,7 @@ services:
     ports:
       - ${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}
     volumes:
-      - ${MONGODB_PATH:-./mongodb}:/data/db
+      - ${MONGODB_PATH:-./data/mongo}:/data/db
     # TODO: add auth
 
   chatgpt_telegram_bot:
@@ -18,6 +19,8 @@ services:
     build:
       context: "."
       dockerfile: Dockerfile
+    volumes:
+      - ./:/code
     depends_on:
       - mongo
 

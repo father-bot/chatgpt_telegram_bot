@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  chatgpt_telegram_bot:
+    container_name: chatgpt_telegram_bot
+    command: python3 bot/bot.py
+    restart: always
+    build:
+      context: "."
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/code
+    depends_on:
+      - redis_host
+  redis_host:
+    image: redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PWD:-pwd}
+    volumes:
+      - ${REDIS_DB_PATH:-./data/redis}:/data
+    environment:
+     - REDIS_REPLICATION_MODE=master
+  redis_admin:
+    image: erikdubbelboer/phpredisadmin
+    depends_on:
+      - redis_host
+    environment:
+      - REDIS_1_HOST=${REDIS_HOST:-redis_host}
+      - REDIS_1_AUTH=${REDIS_PWD:-pwd}
+      - ADMIN_USER=${REDIS_ADMIN_USER:-admin}
+      - ADMIN_PASS=${REDIS_ADMIN_PWD:-admin888}
+    ports:
+      - ${REDIS_ADMIN_PORT:-8082}:80

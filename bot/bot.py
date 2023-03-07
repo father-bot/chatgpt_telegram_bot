@@ -4,7 +4,6 @@ import traceback
 import html
 import json
 from datetime import datetime
-
 import telegram
 from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -17,14 +16,14 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode, ChatAction
 
-import config
+import setting
 import database
+import db_redis
 import chatgpt
 
-
 # setup
-db = database.Database()
-logger = logging.getLogger(__name__)
+db = db_redis.Database() if setting.use_redis else database.Database()
+logger = logging.getLogger("bot")
 
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
@@ -78,8 +77,10 @@ async def retry_handle(update: Update, context: CallbackContext):
         return
 
     last_dialog_message = dialog_messages.pop()
-    db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
-
+    if setting.use_redis:
+        db.del_dialog_message(user_id,last_dialog_message["msg_id"],dialog_id=None)
+    else:
+        db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
@@ -91,10 +92,11 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
+    msg_id = update.message.message_id
 
     # new dialog timeout
     if use_new_dialog_timeout:
-        if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout:
+        if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > setting.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
             db.start_new_dialog(user_id)
             await update.message.reply_text("Starting new dialog due to timeout ✅")
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
@@ -104,27 +106,34 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     try:
         message = message or update.message.text
-
-        chatgpt_instance = chatgpt.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
+        logger.info("==========")
+        logger.info(message)
+        chatgpt_instance = chatgpt.ChatGPT(use_chatgpt_api=setting.use_chatgpt_api)
         answer, n_used_tokens, n_first_dialog_messages_removed = chatgpt_instance.send_message(
             message,
             dialog_messages=db.get_dialog_messages(user_id, dialog_id=None),
             chat_mode=db.get_user_attribute(user_id, "current_chat_mode"),
         )
-
         # update user data
-        new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
-        db.set_dialog_messages(
-            user_id,
-            db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
-            dialog_id=None
-        )
+        msg_date = datetime.now()
+        new_dialog_message = {"user": message, "bot": answer, "date": msg_date,"msg_id":msg_id}
 
+        if setting.use_redis:
+            db.set_dialog_message(
+                user_id,
+                new_dialog_message,
+                dialog_id=None
+            )
+        else:
+            db.set_dialog_messages(
+                user_id,
+                db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
+                dialog_id=None
+            )
         db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
-
     except Exception as e:
         error_text = f"Something went wrong during completion. Reason: {e}"
-        logger.error(error_text)
+        logger.error(e)
         await update.message.reply_text(error_text)
         return
 
@@ -135,9 +144,23 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         else:
             text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
-
+    
     try:
-        await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
+        logger.info("--------")
+        logger.info(answer)
+        # assuming `answer` is a string variable containing the message to be sent
+        MAX_MESSAGE_LENGTH = 4096
+        if len(answer) > MAX_MESSAGE_LENGTH:
+            # loop through the string and send it in chunks
+            for i in range(0, len(answer), MAX_MESSAGE_LENGTH):
+                chunk = answer[i:i + MAX_MESSAGE_LENGTH]
+                await update.message.reply_text(chunk)
+        else:
+            # send the entire message as one message
+            await update.message.reply_text(answer)
+
+        # await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
+
     except telegram.error.BadRequest:
         # answer has invalid characters, so we send it without parse_mode
         await update.message.reply_text(answer)
@@ -196,7 +219,7 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
     n_used_tokens = db.get_user_attribute(user_id, "n_used_tokens")
 
-    price = 0.002 if config.use_chatgpt_api else 0.02
+    price = 0.002 if setting.use_chatgpt_api else 0.02
     n_spent_dollars = n_used_tokens * (price / 1000)
 
     text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
@@ -236,15 +259,15 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
 def run_bot() -> None:
     application = (
         ApplicationBuilder()
-        .token(config.telegram_token)
+        .token(setting.telegram_token)
         .build()
     )
 
     # add handlers
-    if len(config.allowed_telegram_usernames) == 0:
+    if len(setting.allowed_telegram_usernames) == 0:
         user_filter = filters.ALL
     else:
-        user_filter = filters.User(username=config.allowed_telegram_usernames)
+        user_filter = filters.User(username=setting.allowed_telegram_usernames)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))

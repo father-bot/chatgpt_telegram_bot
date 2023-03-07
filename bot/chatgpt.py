@@ -1,7 +1,7 @@
-import config
+import setting
 
 import openai
-openai.api_key = config.openai_api_key
+openai.api_key = setting.openai_api_key
 
 
 CHAT_MODES = {

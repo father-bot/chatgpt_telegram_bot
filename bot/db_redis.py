@@ -1,22 +1,26 @@
+import json
 from typing import Optional, Any
-
-import pymongo
+import redis
 import uuid
-from datetime import datetime
+from datetime import datetime,date
 
 import setting
 
+class CJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 class Database:
     def __init__(self):
-        self.client = pymongo.MongoClient(setting.mongodb_uri)
-        self.db = self.client["chatgpt_telegram_bot"]
-
-        self.user_collection = self.db["user"]
-        self.dialog_collection = self.db["dialog"]
+        self.client = redis.Redis(host=setting.redis_host, port=setting.redis_port, db=setting.redis_db, password=setting.redis_pwd)
 
     def check_if_user_exists(self, user_id: int, raise_exception: bool = False):
-        if self.user_collection.count_documents({"_id": user_id}) > 0:
+        if self.client.get("user_%d".format(user_id)) is not None:
             return True
         else:
             if raise_exception:
@@ -50,13 +54,12 @@ class Database:
         }
 
         if not self.check_if_user_exists(user_id):
-            self.user_collection.insert_one(user_dict)
+            self.client.set("user_%d".format(user_id),json.dumps(user_dict,cls=CJsonEncoder))
             
         # TODO: maybe start a new dialog here?
 
     def start_new_dialog(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)
-
         dialog_id = str(uuid.uuid4())
         dialog_dict = {
             "_id": dialog_id,
@@ -65,47 +68,46 @@ class Database:
             "start_time": datetime.now(),
             "messages": []
         }
-
-        # add new dialog
-        self.dialog_collection.insert_one(dialog_dict)
-
-        # update user's current dialog
-        self.user_collection.update_one(
-            {"_id": user_id},
-            {"$set": {"current_dialog_id": dialog_id}}
-        )
-
+        self.client.set("dialog_%s".format(dialog_id),json.dumps(dialog_dict,cls=CJsonEncoder))
+        self.set_user_attribute(user_id,"current_dialog_id",dialog_id)
         return dialog_id
 
     def get_user_attribute(self, user_id: int, key: str):
         self.check_if_user_exists(user_id, raise_exception=True)
-        user_dict = self.user_collection.find_one({"_id": user_id})
+        user_dict = json.loads(self.client.get("user_%d".format(user_id)))
 
         if key not in user_dict:
             raise ValueError(f"User {user_id} does not have a value for {key}")
 
+        if key in ['last_interaction',"first_seen"]:
+            return datetime.strptime(user_dict[key], '%Y-%m-%d %H:%M:%S')
         return user_dict[key]
 
     def set_user_attribute(self, user_id: int, key: str, value: Any):
         self.check_if_user_exists(user_id, raise_exception=True)
-        self.user_collection.update_one({"_id": user_id}, {"$set": {key: value}})
+        user_dict = json.loads(self.client.get("user_%d".format(user_id)))
+        user_dict[key] = value
+        self.client.set("user_%d".format(user_id),json.dumps(user_dict,cls=CJsonEncoder))
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
-
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
+        rows = self.client.hgetall("message_%d_%s".format(user_id,dialog_id))
+        msgs = [json.loads(msg) for msg in rows.values()]
+        return sorted(msgs, key=lambda x: x['msg_id'])
 
-        dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})               
-        return dialog_dict["messages"]
-
-    def set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
+    def del_dialog_message(self, user_id: int, msg_id=str,dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
-
         if dialog_id is None:
             dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
-        
-        self.dialog_collection.update_one(
-            {"_id": dialog_id, "user_id": user_id},
-            {"$set": {"messages": dialog_messages}}
-        )
+        self.client.hdel("message_%d_%s".format(user_id,dialog_id),msg_id)
+
+    def set_dialog_message(self, user_id: int, dialog_message: dict, dialog_id: Optional[str] = None):
+        self.check_if_user_exists(user_id, raise_exception=True)
+        if dialog_id is None:
+            dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
+        self.client.hset("message_%d_%s".format(user_id,dialog_id),str(dialog_message["msg_id"]),json.dumps(dialog_message,cls=CJsonEncoder))
+
+    def set_dialog_messages(self, user_id: int, dialog_message: dict, dialog_id: Optional[str] = None):
+        pass

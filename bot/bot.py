@@ -110,7 +110,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         message = message or update.message.text
 
         chatgpt_instance = chatgpt.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
-        answer, n_used_tokens, n_first_dialog_messages_removed = chatgpt_instance.send_message(
+        answer, n_used_tokens, n_first_dialog_messages_removed = await chatgpt_instance.send_message(
             message,
             dialog_messages=db.get_dialog_messages(user_id, dialog_id=None),
             chat_mode=db.get_user_attribute(user_id, "current_chat_mode"),
@@ -241,6 +241,7 @@ def run_bot() -> None:
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)
+        .concurrent_updates(True)
         .build()
     )
 

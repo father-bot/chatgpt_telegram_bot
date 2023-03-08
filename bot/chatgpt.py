@@ -43,7 +43,7 @@ class ChatGPT:
     def __init__(self, use_chatgpt_api=True):
         self.use_chatgpt_api = use_chatgpt_api
     
-    def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -53,7 +53,7 @@ class ChatGPT:
             try:
                 if self.use_chatgpt_api:
                     messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
-                    r = openai.ChatCompletion.create(
+                    r = await openai.ChatCompletion.acreate(
                         model="gpt-3.5-turbo",
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -61,7 +61,7 @@ class ChatGPT:
                     answer = r.choices[0].message["content"]
                 else:
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r = openai.Completion.create(
+                    r = await openai.Completion.acreate(
                         engine="text-davinci-003",
                         prompt=prompt,
                         **OPENAI_COMPLETION_OPTIONS

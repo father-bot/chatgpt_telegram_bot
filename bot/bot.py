@@ -3,6 +3,9 @@ import logging
 import traceback
 import html
 import json
+import tempfile
+import pydub
+from pathlib import Path
 from datetime import datetime
 
 import telegram
@@ -19,7 +22,7 @@ from telegram.constants import ParseMode, ChatAction
 
 import config
 import database
-import chatgpt
+import openai_utils
 
 
 # setup
@@ -109,7 +112,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     try:
         message = message or update.message.text
 
-        chatgpt_instance = chatgpt.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
+        chatgpt_instance = openai_utils.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
         answer, n_used_tokens, n_first_dialog_messages_removed = await chatgpt_instance.send_message(
             message,
             dialog_messages=db.get_dialog_messages(user_id, dialog_id=None),
@@ -147,6 +150,42 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         await update.message.reply_text(answer)
 
 
+async def voice_message_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    voice = update.message.voice
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_dir = Path(tmp_dir)
+        voice_ogg_path = tmp_dir / "voice.ogg"
+
+        # download
+        voice_file = await context.bot.get_file(voice.file_id)
+        await voice_file.download_to_drive(voice_ogg_path)
+
+        # convert to mp3
+        voice_mp3_path = tmp_dir / "voice.mp3"
+        pydub.AudioSegment.from_file(voice_ogg_path).export(voice_mp3_path, format="mp3")
+
+        # transcribe
+        with open(voice_mp3_path, "rb") as f:
+            transcribed_text = await openai_utils.transcribe_audio(f)
+
+    text = f"🎤: <i>{transcribed_text}</i>"
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
+    await message_handle(update, context, message=transcribed_text)
+
+    # calculate spent dollars
+    n_spent_dollars = voice.duration * (config.whisper_price_per_1_min / 60)
+
+    # normalize dollars to tokens (it's very convenient to measure everything in a single unit)
+    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.gpt_price_per_1000_tokens
+    n_used_tokens = int(n_spent_dollars / (price_per_1000_tokens / 1000))
+    db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
+
+
 async def new_dialog_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
@@ -156,7 +195,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     await update.message.reply_text("Starting new dialog ✅")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+    await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
@@ -165,7 +204,7 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     keyboard = []
-    for chat_mode, chat_mode_dict in chatgpt.CHAT_MODES.items():
+    for chat_mode, chat_mode_dict in openai_utils.CHAT_MODES.items():
         keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -185,11 +224,11 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     db.start_new_dialog(user_id)
 
     await query.edit_message_text(
-        f"<b>{chatgpt.CHAT_MODES[chat_mode]['name']}</b> chat mode is set",
+        f"<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> chat mode is set",
         parse_mode=ParseMode.HTML
     )
 
-    await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+    await query.edit_message_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
 async def show_balance_handle(update: Update, context: CallbackContext):
@@ -200,11 +239,15 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
     n_used_tokens = db.get_user_attribute(user_id, "n_used_tokens")
 
-    price = 0.002 if config.use_chatgpt_api else 0.02
-    n_spent_dollars = n_used_tokens * (price / 1000)
+    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.gpt_price_per_1000_tokens
+    n_spent_dollars = n_used_tokens * (price_per_1000_tokens / 1000)
 
     text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
-    text += f"You used <b>{n_used_tokens}</b> tokens <i>(price: {price}$ per 1000 tokens)</i>\n"
+    text += f"You used <b>{n_used_tokens}</b> tokens\n\n"
+
+    text += "🏷️ Prices\n"
+    text += f"<i>- ChatGPT: {price_per_1000_tokens}$ per 1000 tokens\n"
+    text += f"- Whisper (voice recognition): {config.whisper_price_per_1_min}$ per 1 minute</i>"
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -257,6 +300,8 @@ def run_bot() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
+
+    application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
     
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))

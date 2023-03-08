@@ -37,6 +37,12 @@ HELP_MESSAGE = """Commands:
 ⚪ /help – Show help
 """
 
+
+def split_text_into_chunks(text, chunk_size):
+    for i in range(0, len(text), chunk_size):
+        yield text[i:i + chunk_size]
+
+
 async def register_user_if_not_exists(update: Update, context: CallbackContext, user: User):
     if not db.check_if_user_exists(user.id):
         db.add_new_user(
@@ -143,11 +149,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
-    try:
-        await update.message.reply_text(answer, parse_mode=ParseMode.HTML)
-    except telegram.error.BadRequest:
-        # answer has invalid characters, so we send it without parse_mode
-        await update.message.reply_text(answer)
+    # split answer into multiple messages due to 4096 character limit
+    for answer_chunk in split_text_into_chunks(answer, 4000):
+        try:
+            await update.message.reply_text(answer_chunk, parse_mode=ParseMode.HTML)
+        except telegram.error.BadRequest:
+            # answer has invalid characters, so we send it without parse_mode
+            await update.message.reply_text(answer_chunk)
 
 
 async def voice_message_handle(update: Update, context: CallbackContext):
@@ -273,10 +281,12 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
         )
 
         # split text into multiple messages due to 4096 character limit
-        message_chunk_size = 4000
-        message_chunks = [message[i:i + message_chunk_size] for i in range(0, len(message), message_chunk_size)]
-        for message_chunk in message_chunks:
-            await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
+        for message_chunk in split_text_into_chunks(message, 4000):
+            try:
+                await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
+            except telegram.error.BadRequest:
+                # answer has invalid characters, so we send it without parse_mode
+                await context.bot.send_message(update.effective_chat.id, message_chunk)
     except:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 

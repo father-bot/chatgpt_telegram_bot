@@ -113,3 +113,8 @@ class ChatGPT:
     def _postprocess_answer(self, answer):
         answer = answer.strip()
         return answer
+
+
+async def transcribe_audio(audio_file):
+    r = await openai.Audio.atranscribe("whisper-1", audio_file)
+    return r["text"]

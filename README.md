@@ -58,6 +58,23 @@ mv config/config.example.env config/config.env
 docker-compose --env-file config/config.env up --build
 ```
 
+
+## Configure Command Hints (Optional)
+
+At [@BotFather](https://t.me/BotFather), use command `/mybots` -> select your bot -> Edit Bot -> Edit Commands. The paste the following to the BotFather:
+
+```
+retry - Regenerate last bot answer
+new - Start new dialog
+mode - Select chat mode
+balance - Show balance
+help - Show help
+```
+
+After that, you will see hints when you type commands.
+
+![](https://i.imgur.com/Li7vnq8.png)
+
 ## ❤️ Top donations
 You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
 

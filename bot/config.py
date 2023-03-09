@@ -19,6 +19,10 @@ allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
+# chat_modes
+with open(config_dir / "chat_modes.yml", 'r') as f:
+    chat_modes = yaml.safe_load(f)
+
 # prices
 chatgpt_price_per_1000_tokens = config_yaml.get("chatgpt_price_per_1000_tokens", 0.002)
 gpt_price_per_1000_tokens = config_yaml.get("gpt_price_per_1000_tokens", 0.02)

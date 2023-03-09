@@ -23,6 +23,7 @@ This repo is ChatGPT re-created with GPT-3.5 LLM as Telegram Bot. **And it works
 You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/chatgpt_karfly_bot)
 
 ## News
+- *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction). It's enabled by default and can be disabled with `use_chatgpt_api` option in config. Don't forget to **rebuild** you docker image (`--build`).
 
@@ -31,7 +32,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - No request limits
 - Voice message recognition
 - Code highlighting
-- Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 🎬 Movie Expert. More soon
+- Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 📝 Text Improver and 🎬 Movie Expert. You can easily create your own chat modes by editing `config/chat_modes.yml`
 - Support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction)
 - List of allowed Telegram users
 - Track $ balance spent on OpenAI API

@@ -425,8 +425,8 @@ def run_bot() -> None:
 
     telegram_proxy = None
     if curr_args.proxy and len(curr_args.proxy) > 0:
-        openai.proxy = curr_args.proxy
         telegram_proxy = f"http://{curr_args.proxy}"
+        openai.proxy = telegram_proxy
 
     application = (
         ApplicationBuilder()

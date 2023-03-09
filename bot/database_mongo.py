@@ -30,6 +30,23 @@ class MongoDataBase:
             first_name: str = "",
             last_name: str = "",
     ):
+        user_dict = {
+            "_id": user_id,
+            "chat_id": chat_id,
+
+            "username": username,
+            "first_name": first_name,
+            "last_name": last_name,
+
+            "last_interaction": datetime.now(),
+            "first_seen": datetime.now(),
+
+            "current_dialog_id": None,
+            "current_chat_mode": "assistant",
+
+            "n_used_tokens": 0
+        }
+
         if not self.check_if_user_exists(user_id):
             self.user_collection.insert_one(user_dict)
 

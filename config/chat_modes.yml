@@ -23,7 +23,7 @@ text_improver:
     
     All your answers strictly follows the structure (keep html tags):
     <b>Edited text:</b>
-    {EDITED TEXT}"
+    {EDITED TEXT}
 
     <b>Correction:</b>
     {NUMBERED LIST OF CORRECTIONS}

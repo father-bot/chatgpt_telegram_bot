@@ -223,6 +223,10 @@ async def image_generation_handle(update: Update, context: CallbackContext):
     # generate image
     image_url = await openai_utils.generate_image(caption)
 
+    if image_url is None:
+        await update.message.reply_text("Something went wrong during image generation. It's possible that your request not allowed by openai's safety system.")
+        return
+
     # send image
     await update.message.reply_photo(image_url, caption=caption)
 

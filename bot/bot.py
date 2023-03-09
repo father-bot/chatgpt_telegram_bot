@@ -33,6 +33,7 @@ HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
 ⚪ /new – Start new dialog
 ⚪ /mode – Select chat mode
+⚪ /imagine <prompt> – Generate an image
 ⚪ /balance – Show balance
 ⚪ /help – Show help
 """
@@ -203,6 +204,31 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
 
 
+async def image_generation_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if len(context.args) == 0:
+        await update.message.reply_text("Please, specify the image caption")
+        return
+
+    # get image caption
+    caption = " ".join(context.args)
+
+    # generate image
+    image_url = await openai_utils.generate_image(caption)
+    text = f"<img src='{image_url}'>"
+
+    # send text
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
+    # normalize dollars to tokens (it's very convenient to measure everything in a single unit)
+    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.dalle_price_per_image
+    n_used_tokens = int(config.dalle_price_per_image / (price_per_1000_tokens / 1000))
+    db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
+
+
 async def new_dialog_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
@@ -326,6 +352,8 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+
+    application.add_handler(CommandHandler("imagine", image_generation_handle, filters=user_filter))
     
     application.add_error_handler(error_handle)
     

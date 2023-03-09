@@ -31,6 +31,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - Low latency replies (it usually takes about 3-5 seconds) 
 - No request limits
 - Voice message recognition
+- Image generation through dalle
 - Code highlighting
 - Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 📝 Text Improver and 🎬 Movie Expert. You can easily create your own chat modes by editing `config/chat_modes.yml`
 - Support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction)
@@ -41,6 +42,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - `/retry` – Regenerate last bot answer
 - `/new` – Start new dialog
 - `/mode` – Select chat mode
+- `/imagine <prompt>` – Generate image
 - `/balance` – Show balance
 - `/help` – Show help
 

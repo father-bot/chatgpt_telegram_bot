@@ -3,7 +3,6 @@ import config
 import openai
 openai.api_key = config.openai_api_key
 
-
 CHAT_MODES = config.chat_modes
 
 OPENAI_COMPLETION_OPTIONS = {
@@ -94,3 +93,8 @@ class ChatGPT:
 async def transcribe_audio(audio_file):
     r = await openai.Audio.atranscribe("whisper-1", audio_file)
     return r["text"]
+
+
+async def generate_image(prompt):
+    r = await openai.Image.create(prompt=prompt, n=1, size="256x256")
+    return r["data"][0]["url"]

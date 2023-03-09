@@ -33,7 +33,11 @@ HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
 ⚪ /new – Start new dialog
 ⚪ /mode – Select chat mode
+<<<<<<< HEAD
 ⚪ /imagine <prompt> – Generate an image
+=======
+⚪ /imagine {prompt} – Generate an image
+>>>>>>> 714f474... Image generation through Dalle
 ⚪ /balance – Show balance
 ⚪ /help – Show help
 """
@@ -62,10 +66,10 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
-    
+
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
-    
+
     reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with GPT-3.5 OpenAI API 🤖\n\n"
     reply_text += HELP_MESSAGE
 
@@ -218,15 +222,12 @@ async def image_generation_handle(update: Update, context: CallbackContext):
 
     # generate image
     image_url = await openai_utils.generate_image(caption)
-    text = f"<img src='{image_url}'>"
 
-    # send text
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+    # send image
+    await update.message.reply_photo(image_url, caption=caption)
 
     # normalize dollars to tokens (it's very convenient to measure everything in a single unit)
-    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.dalle_price_per_image
-    n_used_tokens = int(config.dalle_price_per_image / (price_per_1000_tokens / 1000))
-    db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
+    db.set_user_attribute(user_id, "n_used_tokens", config.dalle_price_per_image + db.get_user_attribute(user_id, "n_used_tokens"))
 
 
 async def new_dialog_handle(update: Update, context: CallbackContext):

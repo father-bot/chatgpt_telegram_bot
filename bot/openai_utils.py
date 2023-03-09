@@ -96,5 +96,5 @@ async def transcribe_audio(audio_file):
 
 
 async def generate_image(prompt):
-    r = await openai.Image.create(prompt=prompt, n=1, size="256x256")
+    r = openai.Image.create(prompt=prompt, n=1, size="256x256")
     return r["data"][0]["url"]

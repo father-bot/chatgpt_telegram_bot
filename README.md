@@ -42,7 +42,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - `/retry` – Regenerate last bot answer
 - `/new` – Start new dialog
 - `/mode` – Select chat mode
-- `/imagine <prompt>` – Generate image
+- `/imagine {prompt}` – Generate image
 - `/balance` – Show balance
 - `/help` – Show help
 

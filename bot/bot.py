@@ -235,17 +235,19 @@ async def answer_timeout_handle(update: Update, context: CallbackContext):
     new_dialog = query.data.split("|")[1]
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
     if len(dialog_messages) == 0:
-        await update.message.reply_text("No history dialog. Start a new one 🤷‍♂️")
-        await new_dialog_handle(update.callback_query, context, user_id)
+        await query.edit_message_text("I don't see any dialog. You are using a new one. 🙅‍♂️")
         return
     elif 'bot' in dialog_messages[-1]:  # already answered, do nothing
+        await query.edit_message_text("I must have served you. 🤷‍♂️")
         return
 
     last_dialog_message = dialog_messages.pop()
     if new_dialog == "true":
+        await query.edit_message_text("Sure, a new dialog. 🫡")
         await new_dialog_handle(update.callback_query, context, user_id)
         await message_handle(update.callback_query, context, message=last_dialog_message["user"], use_new_dialog_timeout=False, user_id=user_id)
     else:  # false
+        await query.edit_message_text("Sure, let's continue. 🫡")
         await retry_handle(update.callback_query, context, user_id)
 
 

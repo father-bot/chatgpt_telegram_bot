@@ -90,7 +90,10 @@ class ChatGPT:
     def _generate_prompt_messages_for_chatgpt_api(self, message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
         
-        messages = [{"role": "system", "content": prompt}]
+        if prompt is not None:
+            messages = [{"role": "system", "content": prompt}]
+        else:
+            messages = []
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
             messages.append({"role": "assistant", "content": dialog_message["bot"]})

@@ -284,13 +284,16 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    cur_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
     keyboard = []
     for chat_mode, chat_mode_dict in openai_utils.CHAT_MODES.items():
         keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+    await update.message.reply_text(
+        f"Your current chat mode is {openai_utils.CHAT_MODES[cur_mode]['name']}. "
+        + "Select chat mode if you want to change:", reply_markup=reply_markup)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):

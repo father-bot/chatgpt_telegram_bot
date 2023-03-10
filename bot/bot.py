@@ -33,6 +33,7 @@ HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
 ⚪ /new – Start new dialog
 ⚪ /mode – Select chat mode
+⚪ /history – Show dialog History
 ⚪ /balance – Show balance
 ⚪ /help – Show help
 """
@@ -80,9 +81,9 @@ async def help_handle(update: Update, context: CallbackContext):
     await update.message.reply_text(HELP_MESSAGE, parse_mode=ParseMode.HTML)
 
 
-async def retry_handle(update: Update, context: CallbackContext):
+async def retry_handle(update: Update, context: CallbackContext, user_id=None):
     await register_user_if_not_exists(update, context, update.message.from_user)
-    user_id = update.message.from_user.id
+    user_id = user_id or update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
@@ -93,32 +94,35 @@ async def retry_handle(update: Update, context: CallbackContext):
     last_dialog_message = dialog_messages.pop()
     db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
 
-    await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
+    await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False, user_id=user_id)
 
 
-async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True, user_id=None):
     # check if message is edited
-    if update.edited_message is not None:
+    if getattr(update, "edited_message", None) is not None:
         await edited_message_handle(update, context)
         return
         
     await register_user_if_not_exists(update, context, update.message.from_user)
-    user_id = update.message.from_user.id
+    user_id = user_id or update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+    message = message or update.message.text
 
     # new dialog timeout
     if use_new_dialog_timeout:
         if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
-            db.start_new_dialog(user_id)
-            await update.message.reply_text(f"Starting new dialog due to timeout (<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
+            if config.ask_on_timeout:
+                await ask_timeout_handle(update, context, message)
+                return
+            else:
+                db.start_new_dialog(user_id)
+                await update.message.reply_text(f"Starting new dialog due to timeout (<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     # send typing action
     await update.message.chat.send_action(action="typing")
 
     try:
-        message = message or update.message.text
-
         dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
         chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
@@ -203,9 +207,51 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
 
 
-async def new_dialog_handle(update: Update, context: CallbackContext):
-    await register_user_if_not_exists(update, context, update.message.from_user)
+async def ask_timeout_handle(update: Update, context: CallbackContext, message):
     user_id = update.message.from_user.id
+
+    keyboard = [[
+        InlineKeyboardButton("✅ Yes, a new one!", callback_data=f"new_dialog|true"),
+        InlineKeyboardButton("❌ No, continue.", callback_data=f"new_dialog|false"),
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    new_dialog_message = {"user": message, "date": datetime.now()}
+    db.set_dialog_messages(
+        user_id,
+        db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
+        dialog_id=None
+    )
+
+    await update.message.reply_text(f"Long time no see. Start new dialog?", reply_markup=reply_markup)
+
+
+async def answer_timeout_handle(update: Update, context: CallbackContext):
+    user_id = update.callback_query.from_user.id
+
+    query = update.callback_query
+    await query.answer()
+
+    new_dialog = query.data.split("|")[1]
+    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
+    if len(dialog_messages) == 0:
+        await update.message.reply_text("No history dialog. Start a new one 🤷‍♂️")
+        await new_dialog_handle(update.callback_query, context, user_id)
+        return
+    elif 'bot' in dialog_messages[-1]:  # already answered, do nothing
+        return
+
+    last_dialog_message = dialog_messages.pop()
+    if new_dialog == "true":
+        await new_dialog_handle(update.callback_query, context, user_id)
+        await message_handle(update.callback_query, context, message=last_dialog_message["user"], use_new_dialog_timeout=False, user_id=user_id)
+    else:  # false
+        await retry_handle(update.callback_query, context, user_id)
+
+
+async def new_dialog_handle(update: Update, context: CallbackContext, user_id=None):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = user_id or update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     db.start_new_dialog(user_id)
@@ -213,6 +259,23 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+
+
+async def history_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
+    if len(dialog_messages) == 0:
+        await update.message.reply_text("Sorry, you don't ask me anything. 🤗")
+    else:
+        await update.message.reply_text("Sure, our dialog is as follows ⬇️")
+        for msg in dialog_messages:
+            await update.message.reply_text(
+                f"🖐️ You: {msg['user']}", parse_mode=ParseMode.HTML)
+            await update.message.reply_text(
+                f"🤖 Me: {msg['bot']}", parse_mode=ParseMode.HTML)
 
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
@@ -319,6 +382,8 @@ def run_bot() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
+    application.add_handler(CommandHandler("history", history_handle, filters=user_filter))
+    application.add_handler(CallbackQueryHandler(answer_timeout_handle, pattern="^new_dialog"))
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
     

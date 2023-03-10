@@ -1,8 +1,20 @@
+import os
 import config
 
 import openai
 openai.api_key = config.openai_api_key
 
+proxies = {}
+if 'HTTP_PROXY' in os.environ:
+    proxies['http'] = os.environ["HTTP_PROXY"]
+elif 'http_proxy' in os.environ:
+    proxies['http'] = os.environ["http_proxy"]
+
+if 'HTTPS_PROXY' in os.environ:
+    proxies['https'] = os.environ["HTTPS_PROXY"]
+elif 'https_proxy' in os.environ:
+    proxies['https'] = os.environ["https_proxy"]
+openai.proxy = proxies
 
 CHAT_MODES = config.chat_modes
 

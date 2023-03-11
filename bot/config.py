@@ -19,9 +19,6 @@ allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
-if not all(isinstance(x, int) for x in allowed_telegram_usernames) or not all(isinstance(x, str) for x in allowed_telegram_usernames):
-    raise TypeError("allowed_telegram_usernames must be a list of integers only or strings only")
-
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r') as f:
     chat_modes = yaml.safe_load(f)

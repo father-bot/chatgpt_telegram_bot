@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  chatgpt_telegram_bot:
+    container_name: chatgpt_telegram_bot
+    command: python3 bot/bot.py -d=sqlite
+    restart: always
+    build:
+      context: "."
+      dockerfile: Dockerfile

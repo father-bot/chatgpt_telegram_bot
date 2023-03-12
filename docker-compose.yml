@@ -20,6 +20,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mongo
+    volumes:
+      - ./config:/code/config
 
   mongo_express:
     container_name: mongo-express

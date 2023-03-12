@@ -80,6 +80,14 @@ If you want to add payments to your bot – write me on Telegram ([@karfly](http
     docker-compose --env-file config/config.env up --build
     ```
 
+Or, using the sqlite, run:
+
+```bash
+docker-compose -f docker-compose-sqlite.yml --env-file config/config.env up --build
+```
+
+
+
 ## ❤️ Top donations
 You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
 

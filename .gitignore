@@ -135,5 +135,4 @@ config/config.env
 docker-compose.dev.yml
 
 mongodb/
-.DS_Store
 *.db

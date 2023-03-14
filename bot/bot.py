@@ -316,12 +316,12 @@ def run_bot() -> None:
     if len(config.allowed_telegram_ids) == 0:
         tg_id_filter = filters.ALL
     else:
-        tg_id_filter = filters.User(username=config.allowed_telegram_ids)
+        tg_id_filter = filters.User(user_id=config.allowed_telegram_ids)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter|tg_id_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter|tg_id_filter))
 
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & (user_filter||tg_id_filter), message_handle))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & (user_filter|tg_id_filter), message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter|tg_id_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter|tg_id_filter))
 

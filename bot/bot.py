@@ -312,20 +312,25 @@ def run_bot() -> None:
         user_filter = filters.ALL
     else:
         user_filter = filters.User(username=config.allowed_telegram_usernames)
-
-    application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
-    application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
-
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
-    application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
-    application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
-
-    application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
     
-    application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
+    if len(config.allowed_telegram_ids) == 0:
+        tg_id_filter = filters.ALL
+    else:
+        tg_id_filter = filters.User(username=config.allowed_telegram_ids)
+
+    application.add_handler(CommandHandler("start", start_handle, filters=user_filter|tg_id_filter))
+    application.add_handler(CommandHandler("help", help_handle, filters=user_filter|tg_id_filter))
+
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & (user_filter||tg_id_filter), message_handle))
+    application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter|tg_id_filter))
+    application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter|tg_id_filter))
+
+    application.add_handler(MessageHandler(filters.VOICE & (user_filter|tg_id_filter), voice_message_handle))
+    
+    application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter|tg_id_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
-    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter|tg_id_filter))
     
     application.add_error_handler(error_handle)
     

@@ -1,7 +1,7 @@
 telegram_token: ""
 openai_api_key: ""
 use_chatgpt_api: true
-allowed_telegram_usernames: []  # if empty, the bot is available to anyone
+allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 
 chatgpt_price_per_1000_tokens: 0.002

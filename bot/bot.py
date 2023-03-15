@@ -173,10 +173,11 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     raise ValueError(f"Streaming status {status} is unknown")
 
                 answer = answer[:4096]  # telegram message limit
-                if len(answer) == 0:
-                    continue
-
                 if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
+                    if len(answer) == 0:  # first answer chunk from openai was empty
+                        i = -1  # try again to send first message
+                        continue
+
                     try:                    
                         sent_message = await update.message.reply_text(answer, parse_mode=parse_mode)
                     except telegram.error.BadRequest:

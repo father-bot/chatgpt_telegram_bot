@@ -174,14 +174,14 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
                 answer = answer[:4096]  # telegram message limit
                 if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
-                    if len(answer) == 0:  # first answer chunk from openai was empty
-                        i = -1  # try again to send first message
-                        continue
-
                     try:                    
                         sent_message = await update.message.reply_text(answer, parse_mode=parse_mode)
-                    except telegram.error.BadRequest:
-                        sent_message = await update.message.reply_text(answer)
+                    except telegram.error.BadRequest as e:
+                        if str(e).startswith("Message must be non-empty"):  # first answer chunk from openai was empty
+                            i = -1  # try again to send first message
+                            continue
+                        else:
+                            sent_message = await update.message.reply_text(answer)
                 else:  # edit sent message
                     # update only when 100 new symbols are ready
                     if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":

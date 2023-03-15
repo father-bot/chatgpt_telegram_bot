@@ -222,6 +222,8 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
 
     keyboard = []
     for chat_mode, chat_mode_dict in openai_utils.CHAT_MODES.items():
+        print(chat_mode_dict["name"])
+        print(chat_mode)
         keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 

@@ -124,8 +124,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     
     async with user_semaphores[user_id]:
-        chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-
         # new dialog timeout
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:

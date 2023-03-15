@@ -95,8 +95,7 @@ async def help_handle(update: Update, context: CallbackContext):
 
 async def retry_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
+    if await is_previous_message_not_answered_yet(update, context): return
     
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
@@ -119,8 +118,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         return
         
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
+    if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
@@ -239,8 +237,7 @@ async def is_previous_message_not_answered_yet(update: Update, context: Callback
 
 async def voice_message_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
+    if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
@@ -278,8 +275,7 @@ async def voice_message_handle(update: Update, context: CallbackContext):
 
 async def new_dialog_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
+    if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
@@ -293,8 +289,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
+    if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())

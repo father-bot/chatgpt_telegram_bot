@@ -44,7 +44,7 @@ class Database:
             "first_seen": datetime.now(),
             
             "current_dialog_id": None,
-            "current_chat_mode": "assistant",
+            "current_chat_mode": config.default_chat_mode,
 
             "n_used_tokens": 0
         }

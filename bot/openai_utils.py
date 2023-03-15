@@ -1,8 +1,20 @@
+import os
 import config
 
 import openai
 openai.api_key = config.openai_api_key
 
+proxies = {}
+if 'HTTP_PROXY' in os.environ:
+    proxies['http'] = os.environ["HTTP_PROXY"]
+elif 'http_proxy' in os.environ:
+    proxies['http'] = os.environ["http_proxy"]
+
+if 'HTTPS_PROXY' in os.environ:
+    proxies['https'] = os.environ["HTTPS_PROXY"]
+elif 'https_proxy' in os.environ:
+    proxies['https'] = os.environ["https_proxy"]
+openai.proxy = proxies
 
 CHAT_MODES = config.chat_modes
 
@@ -78,7 +90,10 @@ class ChatGPT:
     def _generate_prompt_messages_for_chatgpt_api(self, message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
         
-        messages = [{"role": "system", "content": prompt}]
+        if prompt is not None:
+            messages = [{"role": "system", "content": prompt}]
+        else:
+            messages = []
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
             messages.append({"role": "assistant", "content": dialog_message["bot"]})

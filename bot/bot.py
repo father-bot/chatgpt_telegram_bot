@@ -221,6 +221,7 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     keyboard = []
+    print(openai_utils.CHAT_MODES.items())
     for chat_mode, chat_mode_dict in openai_utils.CHAT_MODES.items():
         print(chat_mode_dict["name"])
         print(chat_mode)

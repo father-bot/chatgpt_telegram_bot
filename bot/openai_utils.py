@@ -113,7 +113,6 @@ class ChatGPT:
 
         yield "finished", answer, n_used_tokens, n_first_dialog_messages_removed  # sending final answer
 
-
     def _generate_prompt(self, message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
         prompt += "\n\n"

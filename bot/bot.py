@@ -214,13 +214,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             # update user data
             new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
-            db.set_dialog_messages(
-                user_id,
-                db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
-                dialog_id=None
-            )
-
-            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+            db.append_dialog_message(user_id, new_dialog_message, dialog_id=None)
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens) 
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -501,10 +496,10 @@ def run_bot() -> None:
     else:
         db = database_mongo.MongoDataBase(config.mongodb_uri)
 
-    telegram_proxy = None
+    bot_proxy = None
     if curr_args.proxy and len(curr_args.proxy) > 0:
-        telegram_proxy = f"http://{curr_args.proxy}"
-        openai.proxy = telegram_proxy
+        bot_proxy = f"http://{curr_args.proxy}"
+        openai.proxy = bot_proxy
 
     application = (
         ApplicationBuilder()
@@ -512,8 +507,8 @@ def run_bot() -> None:
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))
         .post_init(post_init)
-        .proxy_url(telegram_proxy)
-        .get_updates_proxy_url(telegram_proxy)
+        .proxy_url(bot_proxy)
+        .get_updates_proxy_url(bot_proxy)
         .connect_timeout(DEFAULT_TIMEOUT)
         .build()
     )

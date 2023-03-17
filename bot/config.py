@@ -18,6 +18,7 @@ use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
 allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
 enable_message_streaming = config_yaml.get("enable_message_streaming", True)
+reply_only_on_mention = config_yaml.get("reply_only_on_mention", False)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
 # chat_modes

@@ -11,10 +11,10 @@ from datetime import datetime
 
 import telegram
 from telegram import (
-    Update, 
-    User, 
-    InlineKeyboardButton, 
-    InlineKeyboardMarkup, 
+    Update,
+    User,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     BotCommand
 )
 from telegram.ext import (
@@ -74,15 +74,15 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
-    
+
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
-    
+
     reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with GPT-3.5 OpenAI API 🤖\n\n"
     reply_text += HELP_MESSAGE
 
     reply_text += "\nAnd now... ask me anything!"
-    
+
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
 
@@ -96,7 +96,7 @@ async def help_handle(update: Update, context: CallbackContext):
 async def retry_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
-    
+
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
@@ -111,18 +111,27 @@ async def retry_handle(update: Update, context: CallbackContext):
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
+async def bot_is_mentioned(update:Update):
+    message = update.message
+    if message.entities and message.entities[0].type == 'mention' and message.entities[0].offset == 0:
+        return True
+    return False
+
+
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+    if not await bot_is_mentioned(update) and config.reply_only_on_mention: return
+
     # check if message is edited
     if update.edited_message is not None:
         await edited_message_handle(update, context)
         return
-        
+
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    
+
     async with user_semaphores[user_id]:
         # new dialog timeout
         if use_new_dialog_timeout:
@@ -174,7 +183,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
                 answer = answer[:4096]  # telegram message limit
                 if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
-                    try:                    
+                    try:
                         sent_message = await update.message.reply_text(answer, parse_mode=parse_mode)
                     except telegram.error.BadRequest as e:
                         if str(e).startswith("Message must be non-empty"):  # first answer chunk from openai was empty
@@ -187,7 +196,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                         continue
 
-                    try:                    
+                    try:
                         await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id, parse_mode=parse_mode)
                     except telegram.error.BadRequest as e:
                         if str(e).startswith("Message is not modified"):
@@ -196,7 +205,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                             await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id)
 
                     await asyncio.sleep(0.01)  # wait a bit to avoid flooding
-                    
+
                 prev_answer = answer
 
             # update user data
@@ -236,6 +245,8 @@ async def is_previous_message_not_answered_yet(update: Update, context: Callback
 
 
 async def voice_message_handle(update: Update, context: CallbackContext):
+    if not await bot_is_mentioned(update) and config.reply_only_on_mention: return
+
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
 
@@ -402,14 +413,14 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
-    
+
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
-    
+
     application.add_error_handler(error_handle)
-    
+
     # start the bot
     application.run_polling()
 

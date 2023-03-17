@@ -4,6 +4,7 @@ use_chatgpt_api: true
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
+reply_only_on_mention: false  # if true, the bot will only reply when mentioned
 
 # prices
 chatgpt_price_per_1000_tokens: 0.002

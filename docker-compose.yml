@@ -3,7 +3,7 @@ version: "3"
 services:
   mongo:
     container_name: mongo
-    image: mongo:latest
+    image: mongo:4.4.6
     restart: always
     ports:
       - ${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}

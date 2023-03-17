@@ -37,6 +37,17 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 
 ---
 
+## 🤑 Payments
+[My bot](https://t.me/chatgpt_karfly_bot) supports many payments providers:
+- 💎 Crypto
+- [Stripe](https://stripe.com)
+- [Smart Glocal](https://smart-glocal.com)
+- [Unlimint](https://www.unlimint.com)
+- [ЮMoney](https://yoomoney.ru)
+- and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
+
+If you want to add payments to your bot – write me on Telegram ([@karfly](https://t.me/karfly)).
+
 ## News
 - *15 Mar 2023*: Added message streaming. Now you don't have to wait until the whole message is ready, it's streamed to Telegram part-by-part (watch demo)
 - *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`

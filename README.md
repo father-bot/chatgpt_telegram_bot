@@ -54,12 +54,19 @@ If you want to add payments to your bot – write me on Telegram ([@karfly](http
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction). It's enabled by default and can be disabled with `use_chatgpt_api` option in config. Don't forget to **rebuild** you docker image (`--build`).
 
-## Bot commands
-- `/retry` – Regenerate last bot answer
-- `/new` – Start new dialog
-- `/mode` – Select chat mode
-- `/balance` – Show balance
-- `/help` – Show help
+## How to Add Bot Commands
+
+1. Open the chat with `BotFather` and type `/setcommands` and select your bot.
+2. Add the following commands to the list:
+   - `/retry`: Regenerate the last bot answer.
+   - `/new`: Start a new dialog.
+   - `/mode`: Select chat mode.
+   - `/balance`: Show your balance.
+   - `/help`: Show help information.
+3. Once the command list is updated, you will be able to access them by typing the command followed by a `/` in the chat with your bot.
+
+## Instructions to run on raspberry pi - arm64
+Clone the repo, update the image from mongo:latest to mongo:bionic in the docker-compose file and follow the setup instructions.
 
 ## Setup
 1. Get your [OpenAI API](https://openai.com/api/) key

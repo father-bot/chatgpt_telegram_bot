@@ -24,6 +24,9 @@ class ChatGPT:
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
+        # Get the model from chat_modes or use the default "gpt-3.5-turbo"
+        chat_completion_model = CHAT_MODES[chat_mode].get("model", "gpt-3.5-turbo")
+
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
@@ -31,7 +34,7 @@ class ChatGPT:
                 if self.use_chatgpt_api:
                     messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
                     r = await openai.ChatCompletion.acreate(
-                        model="gpt-3.5-turbo",
+                        model=chat_completion_model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
                     )
@@ -63,6 +66,7 @@ class ChatGPT:
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
+        chat_completion_model = CHAT_MODES[chat_mode].get("model", "gpt-3.5-turbo")
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
@@ -70,7 +74,7 @@ class ChatGPT:
                 if self.use_chatgpt_api:
                     messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
                     r_gen = await openai.ChatCompletion.acreate(
-                        model="gpt-3.5-turbo",
+                        model=chat_completion_model,
                         messages=messages,
                         stream=True,
                         **OPENAI_COMPLETION_OPTIONS
@@ -83,7 +87,7 @@ class ChatGPT:
                             answer += delta.content
                             yield "not_finished", answer
 
-                    n_used_tokens = self._count_tokens_for_chatgpt(messages, answer, model="gpt-3.5-turbo")
+                    n_used_tokens = self._count_tokens_for_chatgpt(messages, answer, model=chat_completion_model)
                 else:
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
                     r_gen = await openai.Completion.acreate(

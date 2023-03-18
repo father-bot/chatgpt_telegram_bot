@@ -122,7 +122,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    
+    chat_completion_model = openai_utils.CHAT_MODES[chat_mode].get("model", "gpt-3.5-turbo")
+
     async with user_semaphores[user_id]:
         # new dialog timeout
         if use_new_dialog_timeout:
@@ -207,8 +208,15 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 dialog_id=None
             )
 
-            db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
+            # Based on the model used, set the used token counter.
+            if chat_completion_model == "gpt-4":
+                n_gpt4_used_tokens = n_used_tokens
+                db.set_user_attribute(user_id, "n_gpt4_used_tokens", n_gpt4_used_tokens + db.get_user_attribute(user_id, "n_gpt4_used_tokens"))
+            else:
+                db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
         except Exception as e:
+            # Print stack trace
+            traceback.print_exc()
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
             await update.message.reply_text(error_text)
@@ -324,15 +332,18 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     n_used_tokens = db.get_user_attribute(user_id, "n_used_tokens")
+    n_gpt4_used_tokens = db.get_user_attribute(user_id, "n_gpt4_used_tokens")
 
     price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.gpt_price_per_1000_tokens
-    n_spent_dollars = n_used_tokens * (price_per_1000_tokens / 1000)
+    price_per_1000_gpt4_tokens = config.chatgpt_gpt4_price_per_1000_tokens
+    n_spent_dollars = n_used_tokens * (price_per_1000_tokens / 1000) + n_gpt4_used_tokens * (price_per_1000_gpt4_tokens / 1000)
 
     text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
     text += f"You used <b>{n_used_tokens}</b> tokens\n\n"
 
     text += "🏷️ Prices\n"
     text += f"<i>- ChatGPT: {price_per_1000_tokens}$ per 1000 tokens\n"
+    text += f"- ChatGPT-GPT4: {price_per_1000_gpt4_tokens}$ per 1000 tokens\n"
     text += f"- Whisper (voice recognition): {config.whisper_price_per_1_min}$ per 1 minute</i>"
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)

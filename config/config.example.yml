@@ -7,5 +7,6 @@ enable_message_streaming: true  # if set, messages will be shown to user word-by
 
 # prices
 chatgpt_price_per_1000_tokens: 0.002
+chatgpt_gpt4_price_per_1000_tokens: 0.03
 gpt_price_per_1000_tokens: 0.02
 whisper_price_per_1_min: 0.006

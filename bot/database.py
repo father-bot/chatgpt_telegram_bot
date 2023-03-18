@@ -46,7 +46,8 @@ class Database:
             "current_dialog_id": None,
             "current_chat_mode": "assistant",
 
-            "n_used_tokens": 0
+            "n_used_tokens": 0,
+            "n_gpt4_used_tokens": 0 # new field added for GPT-4 tokens
         }
 
         if not self.check_if_user_exists(user_id):
@@ -78,8 +79,12 @@ class Database:
     def get_user_attribute(self, user_id: int, key: str):
         self.check_if_user_exists(user_id, raise_exception=True)
         user_dict = self.user_collection.find_one({"_id": user_id})
-
+        print(user_dict)
+        # Old Users don't have n_gpt4_used_tokens field, Add the new field if it doesn't exist and set it to 0
         if key not in user_dict:
+            if key == "n_gpt4_used_tokens":
+                self.user_collection.update_one({"_id": user_id}, {"$set": {key: 0}})
+                return 0
             raise ValueError(f"User {user_id} does not have a value for {key}")
 
         return user_dict[key]

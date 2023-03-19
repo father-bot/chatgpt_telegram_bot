@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 import config
+import openai_utils
 
 
 class Database:
@@ -23,7 +24,7 @@ class Database:
                 raise ValueError(f"User {user_id} does not exist")
             else:
                 return False
-        
+
     def add_new_user(
         self,
         user_id: int,
@@ -36,13 +37,16 @@ class Database:
             "_id": user_id,
             "chat_id": chat_id,
 
+            "custom_prompt": openai_utils.CHAT_MODES["custom_chat_mode"]["prompt_start"],
+            "parse_mode": "html",
+
             "username": username,
             "first_name": first_name,
             "last_name": last_name,
 
             "last_interaction": datetime.now(),
             "first_seen": datetime.now(),
-            
+
             "current_dialog_id": None,
             "current_chat_mode": "assistant",
 

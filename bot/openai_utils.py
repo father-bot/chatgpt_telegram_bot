@@ -1,9 +1,9 @@
 import config
+import database
 
 import tiktoken
 import openai
 openai.api_key = config.openai_api_key
-
 
 CHAT_MODES = config.chat_modes
 
@@ -20,7 +20,7 @@ class ChatGPT:
     def __init__(self, use_chatgpt_api=True):
         self.use_chatgpt_api = use_chatgpt_api
     
-    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -29,7 +29,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.use_chatgpt_api:
-                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode, user_id)
                     r = await openai.ChatCompletion.acreate(
                         model="gpt-3.5-turbo",
                         messages=messages,
@@ -59,7 +59,7 @@ class ChatGPT:
 
         return answer, n_used_tokens, n_first_dialog_messages_removed
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -68,7 +68,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.use_chatgpt_api:
-                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode, user_id)
                     r_gen = await openai.ChatCompletion.acreate(
                         model="gpt-3.5-turbo",
                         messages=messages,
@@ -130,9 +130,11 @@ class ChatGPT:
 
         return prompt
 
-    def _generate_prompt_messages_for_chatgpt_api(self, message, dialog_messages, chat_mode):
-        prompt = CHAT_MODES[chat_mode]["prompt_start"]
-        
+    def _generate_prompt_messages_for_chatgpt_api(self, message, dialog_messages, chat_mode, user_id):
+        if chat_mode != "custom_chat_mode":
+            prompt = CHAT_MODES[chat_mode]["prompt_start"]
+        else:
+            prompt = database.Database().get_user_attribute(user_id, "custom_prompt")
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})

@@ -4,6 +4,7 @@ services:
   mongo:
     container_name: mongo
     image: mongo:latest
+    command: mongod --port ${MONGODB_PORT:-27017}
     restart: always
     ports:
       - 127.0.0.1:${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}
@@ -28,6 +29,7 @@ services:
     ports:
       - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:${MONGO_EXPRESS_PORT:-8081}
     environment:
+      - VCAP_APP_PORT=${MONGO_EXPRESS_PORT:-8081}
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=${MONGODB_PORT:-27017}
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=false

@@ -35,6 +35,8 @@ import openai_utils
 
 
 # setup
+from tts_utils import get_tts_speak_audio_stream
+
 db = database.Database()
 logger = logging.getLogger(__name__)
 user_semaphores = {}
@@ -206,6 +208,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
                 dialog_id=None
             )
+            if config.enable_azure_tts:
+                audio_stream = get_tts_speak_audio_stream(answer)
+                await context.bot.send_voice(chat_id=sent_message.chat_id, voice=audio_stream)
 
             db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
         except Exception as e:

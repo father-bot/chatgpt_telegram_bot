@@ -43,6 +43,7 @@ HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
 ⚪ /new – Start new dialog
 ⚪ /mode – Select chat mode
+⚪ /settings – Show settings
 ⚪ /balance – Show balance
 ⚪ /help – Show help
 """
@@ -69,6 +70,24 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     if user.id not in user_semaphores:
         user_semaphores[user.id] = asyncio.Semaphore(1)
+
+    if db.get_user_attribute(user.id, "current_model") is None:
+        db.set_user_attribute(user.id, "current_model", config.models["available_text_models"][0])
+
+    # back compatibility for n_used_tokens field
+    n_used_tokens = db.get_user_attribute(user.id, "n_used_tokens")
+    if isinstance(n_used_tokens, int):  # old format
+        new_n_used_tokens = {
+            "gpt-3.5-turbo": {
+                "n_input_tokens": 0,
+                "n_output_tokens": n_used_tokens
+            }
+        }
+        db.set_user_attribute(user.id, "n_used_tokens", new_n_used_tokens)
+
+    # voice message transcription
+    if db.get_user_attribute(user.id, "n_transcribed_seconds") is None:
+        db.set_user_attribute(user.id, "n_transcribed_seconds", 0.0)
 
 
 async def start_handle(update: Update, context: CallbackContext):
@@ -137,24 +156,25 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         try:
             message = message or update.message.text
 
+            current_model = db.get_user_attribute(user_id, "current_model")
             dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
             parse_mode = {
                 "html": ParseMode.HTML,
                 "markdown": ParseMode.MARKDOWN
             }[openai_utils.CHAT_MODES[chat_mode]["parse_mode"]]
 
-            chatgpt_instance = openai_utils.ChatGPT(use_chatgpt_api=config.use_chatgpt_api)
+            chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
                 gen = chatgpt_instance.send_message_stream(message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
-                answer, n_used_tokens, n_first_dialog_messages_removed = await chatgpt_instance.send_message(
+                answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
                     message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
                 )
 
                 async def fake_gen():
-                    yield "finished", answer, n_used_tokens, n_first_dialog_messages_removed
+                    yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
                 gen = fake_gen()
 
@@ -168,7 +188,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 if status == "not_finished":
                     status, answer = gen_item
                 elif status == "finished":
-                    status, answer, n_used_tokens, n_first_dialog_messages_removed = gen_item
+                    status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
                 else:
                     raise ValueError(f"Streaming status {status} is unknown")
 
@@ -207,7 +227,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 dialog_id=None
             )
 
-            db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens) 
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -262,15 +282,10 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     text = f"🎤: <i>{transcribed_text}</i>"
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
+    # update n_transcribed_seconds
+    db.set_user_attribute(user_id, "n_transcribed_seconds", voice.duration + db.get_user_attribute(user_id, "n_transcribed_seconds"))
+
     await message_handle(update, context, message=transcribed_text)
-
-    # calculate spent dollars
-    n_spent_dollars = voice.duration * (config.whisper_price_per_1_min / 60)
-
-    # normalize dollars to tokens (it's very convenient to measure everything in a single unit)
-    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.gpt_price_per_1000_tokens
-    n_used_tokens = int(n_spent_dollars / (price_per_1000_tokens / 1000))
-    db.set_user_attribute(user_id, "n_used_tokens", n_used_tokens + db.get_user_attribute(user_id, "n_used_tokens"))
 
 
 async def new_dialog_handle(update: Update, context: CallbackContext):
@@ -317,23 +332,95 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     await query.edit_message_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
+def get_settings_menu(user_id: int):
+    current_model = db.get_user_attribute(user_id, "current_model")
+    text = config.models["info"][current_model]["description"]
+
+    text += "\n\n"
+    score_dict = config.models["info"][current_model]["scores"]
+    for score_key, score_value in score_dict.items():
+        text += "🟢" * score_value + "⚪️" * (5 - score_value) + f" – {score_key}\n\n"
+
+    text += "\nSelect <b>model</b>:"
+
+    # buttons to choose models
+    buttons = []
+    for model_key in config.models["available_text_models"]:
+        title = config.models["info"][model_key]["name"]
+        if model_key == current_model:
+            title = "✅ " + title
+
+        buttons.append(
+            InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
+        )
+    reply_markup = InlineKeyboardMarkup([buttons])
+
+    return text, reply_markup
+
+
+async def settings_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    if await is_previous_message_not_answered_yet(update, context): return
+
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    text, reply_markup = get_settings_menu(user_id)
+    await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+
+async def set_settings_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update.callback_query, context, update.callback_query.from_user)
+    user_id = update.callback_query.from_user.id
+
+    query = update.callback_query
+    await query.answer()
+
+    _, model_key = query.data.split("|")
+    db.set_user_attribute(user_id, "current_model", model_key)
+    db.start_new_dialog(user_id)
+
+    text, reply_markup = get_settings_menu(user_id)
+    try:                    
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    except telegram.error.BadRequest as e:
+        if str(e).startswith("Message is not modified"):
+            pass
+    
+
 async def show_balance_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-    n_used_tokens = db.get_user_attribute(user_id, "n_used_tokens")
+    # count total usage statistics
+    total_n_spent_dollars = 0
+    total_n_used_tokens = 0
 
-    price_per_1000_tokens = config.chatgpt_price_per_1000_tokens if config.use_chatgpt_api else config.gpt_price_per_1000_tokens
-    n_spent_dollars = n_used_tokens * (price_per_1000_tokens / 1000)
+    n_used_tokens_dict = db.get_user_attribute(user_id, "n_used_tokens")
+    n_transcribed_seconds = db.get_user_attribute(user_id, "n_transcribed_seconds")
 
-    text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
-    text += f"You used <b>{n_used_tokens}</b> tokens\n\n"
+    details_text = "🏷️ Details:\n"
+    for model_key in sorted(n_used_tokens_dict.keys()):
+        n_input_tokens, n_output_tokens = n_used_tokens_dict[model_key]["n_input_tokens"], n_used_tokens_dict[model_key]["n_output_tokens"]
+        total_n_used_tokens += n_input_tokens + n_output_tokens
 
-    text += "🏷️ Prices\n"
-    text += f"<i>- ChatGPT: {price_per_1000_tokens}$ per 1000 tokens\n"
-    text += f"- Whisper (voice recognition): {config.whisper_price_per_1_min}$ per 1 minute</i>"
+        n_input_spent_dollars = config.models["info"][model_key]["price_per_1000_input_tokens"] * (n_input_tokens / 1000)
+        n_output_spent_dollars = config.models["info"][model_key]["price_per_1000_output_tokens"] * (n_output_tokens / 1000)
+        total_n_spent_dollars += n_input_spent_dollars + n_output_spent_dollars
+
+        details_text += f"- {model_key}: <b>{n_input_spent_dollars + n_output_spent_dollars:.03f}$</b> / <b>{n_input_tokens + n_output_tokens} tokens</b>\n"
+
+    voice_recognition_n_spent_dollars = config.models["info"]["whisper"]["price_per_1_min"] * (n_transcribed_seconds / 60)
+    if n_transcribed_seconds != 0:
+        details_text += f"- Whisper (voice recognition): <b>{voice_recognition_n_spent_dollars:.03f}$</b> / <b>{n_transcribed_seconds:.01f} seconds</b>\n"
+    
+    total_n_spent_dollars += voice_recognition_n_spent_dollars    
+
+    text = f"You spent <b>{total_n_spent_dollars:.03f}$</b>\n"
+    text += f"You used <b>{total_n_used_tokens}</b> tokens\n\n"
+    text += details_text
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -374,6 +461,7 @@ async def post_init(application: Application):
         BotCommand("/mode", "Select chat mode"),
         BotCommand("/retry", "Re-generate response for previous query"),
         BotCommand("/balance", "Show balance"),
+        BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
     ])
 
@@ -405,6 +493,9 @@ def run_bot() -> None:
     
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
+
+    application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
+    application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
     

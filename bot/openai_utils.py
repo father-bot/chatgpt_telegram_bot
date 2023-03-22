@@ -17,8 +17,9 @@ OPENAI_COMPLETION_OPTIONS = {
 
 
 class ChatGPT:
-    def __init__(self, use_chatgpt_api=True):
-        self.use_chatgpt_api = use_chatgpt_api
+    def __init__(self, model="gpt-3.5-turbo"):
+        assert model in {"text-davinci-003", "gpt-3.5-turbo", "gpt-4"}, f"Unknown model: {model}"
+        self.model = model
     
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
@@ -28,26 +29,27 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.use_chatgpt_api:
-                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
+                if self.model in {"gpt-3.5-turbo", "gpt-4"}:
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r = await openai.ChatCompletion.acreate(
-                        model="gpt-3.5-turbo",
+                        model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].message["content"]
-                else:
+                elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
                     r = await openai.Completion.acreate(
-                        engine="text-davinci-003",
+                        engine=self.model,
                         prompt=prompt,
                         **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].text
+                else:
+                    raise ValueError(f"Unknown model: {model}")
 
                 answer = self._postprocess_answer(answer)
-                n_used_tokens = r.usage.total_tokens
-                
+                n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
                     raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
@@ -57,7 +59,7 @@ class ChatGPT:
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        return answer, n_used_tokens, n_first_dialog_messages_removed
+        return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
@@ -67,10 +69,10 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.use_chatgpt_api:
-                    messages = self._generate_prompt_messages_for_chatgpt_api(message, dialog_messages, chat_mode)
+                if self.model in {"gpt-3.5-turbo", "gpt-4"}:
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r_gen = await openai.ChatCompletion.acreate(
-                        model="gpt-3.5-turbo",
+                        model=self.model,
                         messages=messages,
                         stream=True,
                         **OPENAI_COMPLETION_OPTIONS
@@ -83,11 +85,11 @@ class ChatGPT:
                             answer += delta.content
                             yield "not_finished", answer
 
-                    n_used_tokens = self._count_tokens_for_chatgpt(messages, answer, model="gpt-3.5-turbo")
-                else:
+                    n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
+                elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
                     r_gen = await openai.Completion.acreate(
-                        engine="text-davinci-003",
+                        engine=self.model,
                         prompt=prompt,
                         stream=True,
                         **OPENAI_COMPLETION_OPTIONS
@@ -98,7 +100,7 @@ class ChatGPT:
                         answer += r_item.choices[0].text
                         yield "not_finished", answer
 
-                    n_used_tokens = self._count_tokens_for_gpt(prompt, answer, model="text-davinci-003")
+                    n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
 
                 answer = self._postprocess_answer(answer)
                 
@@ -111,7 +113,7 @@ class ChatGPT:
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        yield "finished", answer, n_used_tokens, n_first_dialog_messages_removed  # sending final answer
+        yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
@@ -122,15 +124,15 @@ class ChatGPT:
             prompt += "Chat:\n"
             for dialog_message in dialog_messages:
                 prompt += f"User: {dialog_message['user']}\n"
-                prompt += f"ChatGPT: {dialog_message['bot']}\n"
+                prompt += f"Assistant: {dialog_message['bot']}\n"
 
         # current message
         prompt += f"User: {message}\n"
-        prompt += "ChatGPT: "
+        prompt += "Assistant: "
 
         return prompt
 
-    def _generate_prompt_messages_for_chatgpt_api(self, message, dialog_messages, chat_mode):
+    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
         
         messages = [{"role": "system", "content": prompt}]
@@ -145,28 +147,41 @@ class ChatGPT:
         answer = answer.strip()
         return answer
 
-    def _count_tokens_for_chatgpt(self, prompt_messages, answer, model="gpt-3.5-turbo"):
-        prompt_messages += [{"role": "assistant", "content": answer}]        
-
+    def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
         encoding = tiktoken.encoding_for_model(model)
-        n_tokens = 0
-        for message in prompt_messages:
-            n_tokens += 4  # every message follows "<im_start>{role/name}\n{content}<im_end>\n"
-            for key, value in message.items():            
-                if key == "role":
-                    n_tokens += 1
-                elif key == "content":
-                    n_tokens += len(encoding.encode(value))
-                else:
-                    raise ValueError(f"Unknown key in message: {key}")
+
+        if model == "gpt-3.5-turbo":
+            tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            tokens_per_name = -1  # if there's a name, the role is omitted
+        elif model == "gpt-4":
+            tokens_per_message = 3
+            tokens_per_name = 1
+        else:
+            raise ValueError(f"Unknown model: {model}")
+        
+        # input
+        n_input_tokens = 0
+        for message in messages:
+            n_input_tokens += tokens_per_message
+            for key, value in message.items():
+                n_input_tokens += len(encoding.encode(value))
+                if key == "name":
+                    n_input_tokens += tokens_per_name
                     
-        n_tokens -= 1  # remove 1 "<im_end>" token          
-        return n_tokens
+        n_input_tokens += 2
 
-    def _count_tokens_for_gpt(self, prompt, answer, model="text-davinci-003"):
+        # output
+        n_output_tokens = 1 + len(encoding.encode(answer))
+        
+        return n_input_tokens, n_output_tokens
+        
+    def _count_tokens_from_prompt(self, prompt, answer, model="text-davinci-003"):
         encoding = tiktoken.encoding_for_model(model)
-        n_tokens = len(encoding.encode(prompt)) + len(encoding.encode(answer)) + 1
-        return n_tokens
+        
+        n_input_tokens = len(encoding.encode(prompt)) + 1
+        n_output_tokens = len(encoding.encode(answer))
+        
+        return n_input_tokens, n_output_tokens
 
 
 async def transcribe_audio(audio_file):

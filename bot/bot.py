@@ -268,7 +268,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 dialog_id=None
             )
 
-            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens) 
+
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -441,6 +442,62 @@ async def set_settings_handle(update: Update, context: CallbackContext):
             pass
 
 
+def get_settings_menu(user_id: int):
+    current_model = db.get_user_attribute(user_id, "current_model")
+    text = config.models["info"][current_model]["description"]
+
+    text += "\n\n"
+    score_dict = config.models["info"][current_model]["scores"]
+    for score_key, score_value in score_dict.items():
+        text += "🟢" * score_value + "⚪️" * (5 - score_value) + f" – {score_key}\n\n"
+
+    text += "\nSelect <b>model</b>:"
+
+    # buttons to choose models
+    buttons = []
+    for model_key in config.models["available_text_models"]:
+        title = config.models["info"][model_key]["name"]
+        if model_key == current_model:
+            title = "✅ " + title
+
+        buttons.append(
+            InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
+        )
+    reply_markup = InlineKeyboardMarkup([buttons])
+
+    return text, reply_markup
+
+
+async def settings_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    if await is_previous_message_not_answered_yet(update, context): return
+
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    text, reply_markup = get_settings_menu(user_id)
+    await update.message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+
+async def set_settings_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update.callback_query, context, update.callback_query.from_user)
+    user_id = update.callback_query.from_user.id
+
+    query = update.callback_query
+    await query.answer()
+
+    _, model_key = query.data.split("|")
+    db.set_user_attribute(user_id, "current_model", model_key)
+    db.start_new_dialog(user_id)
+
+    text, reply_markup = get_settings_menu(user_id)
+    try:                    
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    except telegram.error.BadRequest as e:
+        if str(e).startswith("Message is not modified"):
+            pass
+    
+
 async def show_balance_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
 
@@ -471,8 +528,9 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     voice_recognition_n_spent_dollars = config.models["info"]["whisper"]["price_per_1_min"] * (n_transcribed_seconds / 60)
     if n_transcribed_seconds != 0:
         details_text += f"- Whisper (voice recognition): <b>{voice_recognition_n_spent_dollars:.03f}$</b> / <b>{n_transcribed_seconds:.01f} seconds</b>\n"
+    
+    total_n_spent_dollars += voice_recognition_n_spent_dollars    
 
-    total_n_spent_dollars += voice_recognition_n_spent_dollars
 
     text = f"You spent <b>{total_n_spent_dollars:.03f}$</b>\n"
     text += f"You used <b>{total_n_used_tokens}</b> tokens\n\n"

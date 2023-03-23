@@ -137,6 +137,7 @@ class ChatGPT:
             prompt = CHAT_MODES[chat_mode]["prompt_start"]
         else:
             prompt = database.Database().get_user_attribute(user_id, "custom_prompt")
+
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
@@ -152,6 +153,7 @@ class ChatGPT:
     def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
         encoding = tiktoken.encoding_for_model(model)
 
+
         if model == "gpt-3.5-turbo":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
@@ -160,7 +162,7 @@ class ChatGPT:
             tokens_per_name = 1
         else:
             raise ValueError(f"Unknown model: {model}")
-
+        
         # input
         n_input_tokens = 0
         for message in messages:
@@ -169,20 +171,20 @@ class ChatGPT:
                 n_input_tokens += len(encoding.encode(value))
                 if key == "name":
                     n_input_tokens += tokens_per_name
-
+                    
         n_input_tokens += 2
 
         # output
         n_output_tokens = 1 + len(encoding.encode(answer))
-
+        
         return n_input_tokens, n_output_tokens
-
+        
     def _count_tokens_from_prompt(self, prompt, answer, model="text-davinci-003"):
         encoding = tiktoken.encoding_for_model(model)
-
+        
         n_input_tokens = len(encoding.encode(prompt)) + 1
         n_output_tokens = len(encoding.encode(answer))
-
+        
         return n_input_tokens, n_output_tokens
 
 

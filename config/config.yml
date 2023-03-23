@@ -1,4 +1,4 @@
-telegram_token: "6262345183:AAFJ7xjVWWLqmAL32xZWK4Mj3FxqT3EDXcw"
+telegram_token: "6164348530:AAESOO-ImKPVqaPK3si78M90aT-NHuKRPco"
 openai_api_key: "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"
 use_chatgpt_api: true
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as integers

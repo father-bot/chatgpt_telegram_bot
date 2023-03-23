@@ -4,27 +4,29 @@ services:
   mongo:
     container_name: mongo
     image: mongo:latest
-    restart: always
     ports:
       - 127.0.0.1:${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}
     volumes:
       - ${MONGODB_PATH:-./mongodb}:/data/db
     # TODO: add auth
+    restart: unless-stopped
 
   chatgpt_telegram_bot:
     container_name: chatgpt_telegram_bot
     command: python3 bot/bot.py
-    restart: always
     build:
       context: "."
       dockerfile: Dockerfile
     depends_on:
       - mongo
+    volumes:
+      - ./bot:/code/bot
+      - ./config:/code/config
+    restart: unless-stopped
 
   mongo_express:
     container_name: mongo-express
     image: mongo-express:latest
-    restart: always
     ports:
       - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:${MONGO_EXPRESS_PORT:-8081}
     environment:
@@ -36,3 +38,4 @@ services:
       - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-password}
     depends_on:
       - mongo
+    restart: unless-stopped

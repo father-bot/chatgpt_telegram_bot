@@ -87,5 +87,9 @@ You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot
 
     *Message:* I wanted to thank you for your amazing code! It helped me start my own Telegram ChatGPT bot and add a bunch of cool features. I really appreciate your hard work on this project. For anyone interested in trying my bot, feel free to check it out here: [magicbuddy.chat](https://magicbuddy.chat) 🤖 Thanks again! 😊
 
+2. [Alexander Zimin](https://t.me/azimin). Donation: **50$**
+
+3. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

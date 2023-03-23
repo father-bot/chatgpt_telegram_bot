@@ -11,10 +11,10 @@ from datetime import datetime
 
 import telegram
 from telegram import (
-    Update, 
-    User, 
-    InlineKeyboardButton, 
-    InlineKeyboardMarkup, 
+    Update,
+    User,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     BotCommand
 )
 from telegram.ext import (
@@ -38,6 +38,7 @@ import openai_utils
 db = database.Database()
 logger = logging.getLogger(__name__)
 user_semaphores = {}
+custom_chat_mode_users = set()
 
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
@@ -46,6 +47,7 @@ HELP_MESSAGE = """Commands:
 ⚪ /settings – Show settings
 ⚪ /balance – Show balance
 ⚪ /help – Show help
+⚪ /custom - Set new custom system prompt
 """
 
 
@@ -61,7 +63,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             update.message.chat_id,
             username=user.username,
             first_name=user.first_name,
-            last_name= user.last_name
+            last_name=user.last_name
         )
         db.start_new_dialog(user.id)
 
@@ -93,15 +95,19 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
-    
+
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
+
     db.start_new_dialog(user_id)
-    
+
     reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with GPT-3.5 OpenAI API 🤖\n\n"
     reply_text += HELP_MESSAGE
 
     reply_text += "\nAnd now... ask me anything!"
-    
+
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
 
@@ -109,15 +115,22 @@ async def help_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
+
     await update.message.reply_text(HELP_MESSAGE, parse_mode=ParseMode.HTML)
 
 
 async def retry_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
-    
+
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
 
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
     if len(dialog_messages) == 0:
@@ -135,13 +148,30 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if update.edited_message is not None:
         await edited_message_handle(update, context)
         return
-        
+
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    
+
+    # this branch of logic handles setup of system prompt for custom mode
+    if user_id in custom_chat_mode_users:
+        db.set_user_attribute(user_id, "custom_prompt", update.message.text)
+
+        parse_mode = {
+            "html": {"name": "HTML"},
+            "markdown": {"name": "Markdown"}
+        }
+
+        keyboard = []
+        for parser, parser_dict in parse_mode.items():
+            keyboard.append([InlineKeyboardButton(parser_dict["name"], callback_data=f"set_parse_mode|{parser}")])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text("Choose formatting:", reply_markup=reply_markup)
+        return
+
     async with user_semaphores[user_id]:
         # new dialog timeout
         if use_new_dialog_timeout:
@@ -161,16 +191,27 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             parse_mode = {
                 "html": ParseMode.HTML,
                 "markdown": ParseMode.MARKDOWN
-            }[openai_utils.CHAT_MODES[chat_mode]["parse_mode"]]
+            }
+
+            if chat_mode != "custom_chat_mode":
+                parse_mode = parse_mode[openai_utils.CHAT_MODES[chat_mode]["parse_mode"]]
+            else:
+                parse_mode = parse_mode[db.get_user_attribute(user_id, "parse_mode")]
 
             chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
-                gen = chatgpt_instance.send_message_stream(message, dialog_messages=dialog_messages, chat_mode=chat_mode)
+                gen = chatgpt_instance.send_message_stream(
+                    message,
+                    dialog_messages=dialog_messages,
+                    chat_mode=chat_mode,
+                    user_id=user_id
+                )
             else:
                 answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
                     message,
                     dialog_messages=dialog_messages,
-                    chat_mode=chat_mode
+                    chat_mode=chat_mode,
+                    user_id=user_id
                 )
 
                 async def fake_gen():
@@ -194,7 +235,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
                 answer = answer[:4096]  # telegram message limit
                 if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
-                    try:                    
+                    try:
                         sent_message = await update.message.reply_text(answer, parse_mode=parse_mode)
                     except telegram.error.BadRequest as e:
                         if str(e).startswith("Message must be non-empty"):  # first answer chunk from openai was empty
@@ -207,7 +248,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                         continue
 
-                    try:                    
+                    try:
                         await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id, parse_mode=parse_mode)
                     except telegram.error.BadRequest as e:
                         if str(e).startswith("Message is not modified"):
@@ -216,7 +257,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                             await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id)
 
                     await asyncio.sleep(0.01)  # wait a bit to avoid flooding
-                    
+
                 prev_answer = answer
 
             # update user data
@@ -228,6 +269,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             )
 
             db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens) 
+
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -295,11 +337,15 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
+
     db.start_new_dialog(user_id)
     await update.message.reply_text("Starting new dialog ✅")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-    await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+    welcome_message = openai_utils.CHAT_MODES[chat_mode].get('welcome_message', f"This is the system prompt:\n\n{db.get_user_attribute(user_id,'custom_prompt')}")
+    await update.message.reply_text(welcome_message, parse_mode=ParseMode.HTML)
 
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
@@ -308,6 +354,9 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
 
     keyboard = []
     for chat_mode, chat_mode_dict in openai_utils.CHAT_MODES.items():
@@ -329,7 +378,12 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
     db.start_new_dialog(user_id)
 
-    await query.edit_message_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+    try:
+        welcome_message = openai_utils.CHAT_MODES[chat_mode]['welcome_message']
+    except KeyError:
+        welcome_message = f"This is the system prompt:\n\n{db.get_user_attribute(user_id,'custom_prompt')}"
+
+    await query.edit_message_text(welcome_message, parse_mode=ParseMode.HTML)
 
 
 def get_settings_menu(user_id: int):
@@ -394,6 +448,9 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
+
     # count total usage statistics
     total_n_spent_dollars = 0
     total_n_used_tokens = 0
@@ -430,6 +487,56 @@ async def edited_message_handle(update: Update, context: CallbackContext):
     await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
+async def custom_chat_mode_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    if await is_previous_message_not_answered_yet(update, context): return
+
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in custom_chat_mode_users:
+        custom_chat_mode_users.remove(user_id)
+
+    custom_chat_mode_users.add(user_id)
+    db.set_user_attribute(user_id, "current_chat_mode", "custom_chat_mode")
+
+    help_message = """You've been switched to custom chat mode.
+
+To use it, you need to set up a system promt - a special message, which specifies behavior of the bot in custom mode.
+
+Example of a simple system prompt:
+"As an advanced chatbot named ChatGPT, your primary goal is to assist users to write code."
+
+System prompts can be much more complex, you can make a custom system prompts which specify output format and behaviour.
+Currently ChatGPT might not follow system prompts very strictly in all cases, but it still tries.
+
+You can have one custom system prompt at the time. To change it use command /custom again.
+To use existing custom system prompt use command /mode and select "Custom" mode.
+
+Please specify system prompt in your next message:"""
+
+    await update.message.reply_text(help_message, parse_mode=ParseMode.HTML)
+
+
+async def set_custom_parser_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update.callback_query, context, update.callback_query.from_user)
+    user_id = update.callback_query.from_user.id
+
+    query = update.callback_query
+    await query.answer()
+
+    custom_parse_mode = query.data.split("|")[1]
+
+    custom_chat_mode_users.remove(user_id)
+    db.set_user_attribute(user_id, "parse_mode", custom_parse_mode)
+
+    welcome_message = f"This is the system prompt:\n\n{db.get_user_attribute(user_id,'custom_prompt')}"
+
+    db.start_new_dialog(user_id)
+
+    await query.edit_message_text(welcome_message, parse_mode=ParseMode.HTML)
+
+
 async def error_handle(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
@@ -463,7 +570,9 @@ async def post_init(application: Application):
         BotCommand("/balance", "Show balance"),
         BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
+        BotCommand("/custom", "Set new custom system prompt"),
     ])
+
 
 def run_bot() -> None:
     application = (
@@ -490,7 +599,7 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
-    
+
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
 
@@ -498,9 +607,12 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
-    
+
+    application.add_handler(CommandHandler("custom", custom_chat_mode_handle, filters=user_filter))
+    application.add_handler(CallbackQueryHandler(set_custom_parser_handle, pattern="^set_parse_mode"))
+
     application.add_error_handler(error_handle)
-    
+
     # start the bot
     application.run_polling()
 

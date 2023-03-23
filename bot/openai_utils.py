@@ -1,9 +1,9 @@
 import config
+import database
 
 import tiktoken
 import openai
 openai.api_key = config.openai_api_key
-
 
 CHAT_MODES = config.chat_modes
 
@@ -20,8 +20,8 @@ class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
         assert model in {"text-davinci-003", "gpt-3.5-turbo", "gpt-4"}, f"Unknown model: {model}"
         self.model = model
-    
-    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+
+    async def send_message(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -30,7 +30,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -61,7 +61,7 @@ class ChatGPT:
 
         return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -70,7 +70,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -94,7 +94,7 @@ class ChatGPT:
                         stream=True,
                         **OPENAI_COMPLETION_OPTIONS
                     )
-                    
+
                     answer = ""
                     async for r_item in r_gen:
                         answer += r_item.choices[0].text
@@ -103,7 +103,7 @@ class ChatGPT:
                     n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
 
                 answer = self._postprocess_answer(answer)
-                
+
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
                     raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
@@ -132,9 +132,12 @@ class ChatGPT:
 
         return prompt
 
-    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
-        prompt = CHAT_MODES[chat_mode]["prompt_start"]
-        
+    def _generate_prompt_messages(self, message, dialog_messages, chat_mode, user_id):
+        if chat_mode != "custom_chat_mode":
+            prompt = CHAT_MODES[chat_mode]["prompt_start"]
+        else:
+            prompt = database.Database().get_user_attribute(user_id, "custom_prompt")
+
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
@@ -149,6 +152,7 @@ class ChatGPT:
 
     def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
         encoding = tiktoken.encoding_for_model(model)
+
 
         if model == "gpt-3.5-turbo":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n

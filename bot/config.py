@@ -31,6 +31,6 @@ gpt_price_per_1000_tokens = config_yaml.get("gpt_price_per_1000_tokens", 0.02)
 whisper_price_per_1_min = config_yaml.get("whisper_price_per_1_min", 0.006)
 
 enable_azure_tts = config_yaml.get("enable_azure_tts", False)
-azure_tts_key = config_yaml.get("azure_tts_key", None)
-azure_tts_region = config_yaml.get("azure_tts_region", None)
+azure_tts_key = config_yaml.get("azure_tts_key", "")
+azure_tts_region = config_yaml.get("azure_tts_region", "westus")
 azure_tts_name = config_yaml.get("azure_tts_name", "en-US-JessaNeural")

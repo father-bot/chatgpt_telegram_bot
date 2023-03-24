@@ -11,7 +11,8 @@ gpt_price_per_1000_tokens: 0.02
 whisper_price_per_1_min: 0.006
 
 
+# ms tts
 enable_azure_tts: true
 azure_tts_key: ""
 azure_tts_region: ""
-azure_tts_voice: "zh-CN-XiaoxuanNeural"
+azure_tts_voice: "en-US-JessaNeural"

@@ -96,12 +96,12 @@ async def start_handle(update: Update, context: CallbackContext):
     
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
-    
-    reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with GPT-3.5 OpenAI API 🤖\n\n"
+
+    reply_text = "Hi! I'm <b>Mr Bujji</b> bot implemented with ChatGPT 🤖\n\n"
     reply_text += HELP_MESSAGE
 
     reply_text += "\nAnd now... ask me anything!"
-    
+
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
 
@@ -131,16 +131,27 @@ async def retry_handle(update: Update, context: CallbackContext):
 
 
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+    
+    
     # check if message is edited
     if update.edited_message is not None:
         await edited_message_handle(update, context)
         return
+
         
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+
+    if not await has_joined_channel(context, user_id):
+        # User has not joined the channel, show join button
+        join_button = InlineKeyboardButton("Join channel", url=f"https://t.me/geo_horizon")
+        keyboard = [[join_button]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("Please join the channel to proceed:", reply_markup=reply_markup)
+        return
     
     async with user_semaphores[user_id]:
         # new dialog timeout
@@ -464,6 +475,14 @@ async def post_init(application: Application):
         BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
     ])
+
+
+
+async def has_joined_channel(context, user_id):
+    channel_name = "@geo_horizon"
+    chat_member = await context.bot.get_chat_member(channel_name, user_id)
+    return chat_member.status != 'left'
+
 
 def run_bot() -> None:
     application = (

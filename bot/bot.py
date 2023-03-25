@@ -115,22 +115,21 @@ async def help_handle(update: Update, context: CallbackContext):
 
 
 async def retry_handle(update: Update, context: CallbackContext):
-    if listening:
-        await register_user_if_not_exists(update, context, update.message.from_user)
-        if await is_previous_message_not_answered_yet(update, context): return
-        
-        user_id = update.message.from_user.id
-        db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    if await is_previous_message_not_answered_yet(update, context): return
+    
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-        dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
-        if len(dialog_messages) == 0:
-            await update.message.reply_text("No message to retry 🤷‍♂️")
-            return
+    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
+    if len(dialog_messages) == 0:
+        await update.message.reply_text("No message to retry 🤷‍♂️")
+        return
 
-        last_dialog_message = dialog_messages.pop()
-        db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
+    last_dialog_message = dialog_messages.pop()
+    db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
 
-        await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
+    await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):

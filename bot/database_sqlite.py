@@ -4,6 +4,8 @@ from contextlib import closing
 from datetime import datetime
 from typing import Any, Optional
 
+from bot import config
+
 _TABLE_TYPE_CONVERTOR = {
     datetime: (
         lambda x: x.timestamp(),
@@ -11,7 +13,7 @@ _TABLE_TYPE_CONVERTOR = {
     ),
 }
 
-_USER_TABLE_FIELD_TYPES = {
+_USER_TABLE_FIELDS = {
     "_id": int,
     "chat_id": int,
     "username": str,
@@ -21,7 +23,8 @@ _USER_TABLE_FIELD_TYPES = {
     "first_seen": datetime,
     "current_dialog_id": str,
     "current_chat_mode": str,
-    "n_used_tokens": int,
+    "current_model": str,
+    "n_transcribed_seconds": float,
 }
 
 
@@ -40,7 +43,8 @@ class SqliteDataBase:
                            "first_seen INT NOT NULL, "
                            "current_dialog_id TEXT, "
                            "current_chat_mode TEXT NOT NULL, "
-                           "n_used_tokens INT NOT NULL)")
+                           "current_model TEXT NOT NULL, "
+                           "n_transcribed_seconds REAL NOT NULL)")
             cursor.execute("CREATE TABLE IF NOT EXISTS dialogs("
                            "_id TEXT PRIMARY KEY NOT NULL, "
                            "user_id INT NOT NULL, "
@@ -52,6 +56,11 @@ class SqliteDataBase:
                            "dialog_id TEXT NOT NULL, "
                            "user TEXT, "
                            "bot TEXT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS users_n_used_tokens("
+                           "_id INT PRIMARY KEY NOT NULL, "
+                           "n_input_tokens INT NOT NULL, "
+                           "n_output_tokens INT NOT NULL, "
+                           "model TEXT NOT NULL)")
             self.db_conn.commit()
 
     def close(self):
@@ -76,7 +85,7 @@ class SqliteDataBase:
     ):
         if not self.check_if_user_exists(user_id):
             time_now = datetime.now()
-            self.__insert_table_row("users", [
+            user_datas = [
                 user_id,  # _id
                 chat_id,  # chat_id
                 username,  # username
@@ -86,8 +95,11 @@ class SqliteDataBase:
                 time_now,  # first_seen
                 None,  # current_dialog_id
                 "assistant",  # current_chat_mode
-                0  # n_used_tokens
-            ])
+                config.models["available_text_models"][0],  # current_model
+                0.0,  # n_transcribed_seconds
+            ]
+            assert len(user_datas) == len(_USER_TABLE_FIELDS)
+            self.__insert_table_row("users", user_datas)
 
     def start_new_dialog(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)
@@ -112,14 +124,28 @@ class SqliteDataBase:
     def get_user_attribute(self, user_id: int, key: str):
         self.check_if_user_exists(user_id, raise_exception=True)
         with closing(self.db_conn.cursor()) as cursor:
-            res = cursor.execute(f"SELECT {key} FROM users WHERE _id='{user_id}' LIMIT 1").fetchone()
-            if res is None or len(res) == 0:
-                raise ValueError(f"User {user_id} does not have a value for {key}")
-            return SqliteDataBase.__from_query_return(res[0], _USER_TABLE_FIELD_TYPES[key])
+            if key in _USER_TABLE_FIELDS:
+                res = cursor.execute(f"SELECT {key} FROM users WHERE _id='{user_id}' LIMIT 1").fetchone()
+                if res is None or len(res) == 0:
+                    raise ValueError(f"User {user_id} does not have a value for {key}")
+                return SqliteDataBase.__from_query_return(res[0], _USER_TABLE_FIELDS[key])
+            elif key == "n_used_tokens":
+                res = cursor.execute(f"SELECT * FROM users_{key} WHERE _id='{user_id}'")
+                return dict(map(
+                    lambda item: (item[3], {"n_input_tokens": item[1], "n_output_tokens": item[2]}),
+                    res
+                ))
+            else:
+                raise NotImplementedError(f"Invalid field: {key}")
 
     def set_user_attribute(self, user_id: int, key: str, value: Any):
         self.check_if_user_exists(user_id, raise_exception=True)
-        self.__update_table_row("users", ("_id", user_id), {key: value})
+        if key in _USER_TABLE_FIELDS:
+            self.__update_table_row("users", ("_id", user_id), {key: value})
+        elif key == "n_used_tokens":
+            raise NotImplementedError(f"Use the update_n_used_tokens to modify the {key}")
+        else:
+            raise NotImplementedError(f"Invalid field: {key}")
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)
@@ -151,6 +177,14 @@ class SqliteDataBase:
                            f"WHERE _date=(SELECT MAX(_date) FROM messages WHERE dialog_id=? LIMIT 1) "
                            f"AND dialog_id=?", (dialog_id, dialog_id))
             self.db_conn.commit()
+
+    def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
+        with closing(self.db_conn.cursor()) as cursor:
+            cursor.execute(f"UPDATE users_n_used_tokens "
+                           f"SET n_input_tokens=?, n_output_tokens=? "
+                           f"WHERE _id=? AND model=?",
+                           (n_input_tokens, n_output_tokens, user_id, model))
+        self.db_conn.commit()
 
     def __insert_table_row(self, table_name: str, datas: list):
         sql_str = f"INSERT INTO {table_name} VALUES("

@@ -57,10 +57,11 @@ class SqliteDataBase:
                            "user TEXT, "
                            "bot TEXT)")
             cursor.execute("CREATE TABLE IF NOT EXISTS users_n_used_tokens("
-                           "_id INT PRIMARY KEY NOT NULL, "
+                           "_id INT KEY NOT NULL, "
+                           "model TEXT NOT NULL,"
                            "n_input_tokens INT NOT NULL, "
                            "n_output_tokens INT NOT NULL, "
-                           "model TEXT NOT NULL)")
+                           "PRIMARY KEY (_id, model))")
             self.db_conn.commit()
 
     def close(self):
@@ -132,7 +133,7 @@ class SqliteDataBase:
             elif key == "n_used_tokens":
                 res = cursor.execute(f"SELECT * FROM users_{key} WHERE _id='{user_id}'")
                 return dict(map(
-                    lambda item: (item[3], {"n_input_tokens": item[1], "n_output_tokens": item[2]}),
+                    lambda item: (item[1], {"n_input_tokens": item[2], "n_output_tokens": item[3]}),
                     res
                 ))
             else:
@@ -180,10 +181,9 @@ class SqliteDataBase:
 
     def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
         with closing(self.db_conn.cursor()) as cursor:
-            cursor.execute(f"UPDATE users_n_used_tokens "
-                           f"SET n_input_tokens=?, n_output_tokens=? "
-                           f"WHERE _id=? AND model=?",
-                           (n_input_tokens, n_output_tokens, user_id, model))
+            cursor.execute(f"INSERT OR REPLACE INTO users_n_used_tokens "
+                           f"VALUES(_id=?, model=?, n_input_tokens=?, n_output_tokens=?)",
+                           (user_id, model, n_input_tokens, n_output_tokens))
         self.db_conn.commit()
 
     def __insert_table_row(self, table_name: str, datas: list):

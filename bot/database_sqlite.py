@@ -133,7 +133,7 @@ class SqliteDataBase:
             elif key == "n_used_tokens":
                 res = cursor.execute(f"SELECT * FROM users_{key} WHERE _id='{user_id}'")
                 return dict(map(
-                    lambda item: (item[1], {"n_input_tokens": item[2], "n_output_tokens": item[3]}),
+                    lambda item: (str(item[1]), {"n_input_tokens": int(item[2]), "n_output_tokens": int(item[3])}),
                     res
                 ))
             else:

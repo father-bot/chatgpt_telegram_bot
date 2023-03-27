@@ -182,7 +182,7 @@ class SqliteDataBase:
     def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
         with closing(self.db_conn.cursor()) as cursor:
             cursor.execute(f"INSERT OR REPLACE INTO users_n_used_tokens "
-                           f"VALUES(_id=?, model=?, n_input_tokens=?, n_output_tokens=?)",
+                           f"VALUES(?, ?, ?, ?)",
                            (user_id, model, n_input_tokens, n_output_tokens))
         self.db_conn.commit()
 

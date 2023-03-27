@@ -181,11 +181,13 @@ class SqliteDataBase:
 
     def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
         with closing(self.db_conn.cursor()) as cursor:
-            cursor.execute(f"INSERT INTO users_n_used_tokens(_id,model,n_input_tokens,n_output_tokens) "
+            cursor.execute(f"INSERT INTO users_n_used_tokens "
                            f"VALUES(?, ?, ?, ?) "
                            f"ON CONFLICT(_id,model) "
-                           f"DO UPDATE SET n_input_tokens=n_input_tokens+?,n_output_tokens=n_output_tokens+?",
-                           (user_id, model, n_input_tokens, n_output_tokens))
+                           f"DO UPDATE SET "
+                           f"n_input_tokens=n_input_tokens+?,"
+                           f"n_output_tokens=n_output_tokens+?",
+                           (user_id, model, n_input_tokens, n_output_tokens, n_input_tokens, n_output_tokens))
         self.db_conn.commit()
 
     def __insert_table_row(self, table_name: str, datas: list):

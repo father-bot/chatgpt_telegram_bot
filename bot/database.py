@@ -125,3 +125,11 @@ class Database:
             {"_id": dialog_id, "user_id": user_id},
             {"$set": {"messages": dialog_messages}}
         )
+
+    def delete_all_dialogs_except_current(self, user_id: int):
+        user = self.user_collection.find_one({"_id": user_id})
+        if not user:
+            raise ValueError(f"User with ID {user_id} does not exist")
+
+        current_dialog_id = user["current_dialog_id"]
+        self.dialog_collection.delete_many({"user_id": user_id, "_id": {"$ne": current_dialog_id}})

@@ -464,13 +464,18 @@ def run_bot() -> None:
         .post_init(post_init)
         .build()
     )
+    
+    # get the usernames of all members in the channel
+    usernames = []
+    for member in bot.get_chat_members(-1935375006):
+        if member.user.username:
+            usernames.append(member.user.username)
 
     # add handlers
     user_filter = filters.ALL
-    if len(config.allowed_telegram_usernames) > 0:
-        usernames = [x for x in config.allowed_telegram_usernames if isinstance(x, str)]
-        user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
-        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+    if usernames:
+    # add usernames of members of mychannel to user_filter
+    user_filter = filters.User(username=usernames)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))

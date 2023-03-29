@@ -150,10 +150,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 await update.message.reply_text(f"Starting new dialog due to timeout (<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-        # send typing action
-        await update.message.chat.send_action(action="typing")
-
         try:
+            # send placeholder message to user
+            placeholder_message = await update.message.reply_text("...")
+
+            # send typing action
+            await update.message.chat.send_action(action="typing")
+
             message = message or update.message.text
 
             current_model = db.get_user_attribute(user_id, "current_model")
@@ -178,12 +181,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
                 gen = fake_gen()
 
-            # send message to user
             prev_answer = ""
-            i = -1
             async for gen_item in gen:
-                i += 1
-
                 status = gen_item[0]
                 if status == "not_finished":
                     status, answer = gen_item
@@ -193,29 +192,20 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     raise ValueError(f"Streaming status {status} is unknown")
 
                 answer = answer[:4096]  # telegram message limit
-                if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
-                    try:
-                        sent_message = await update.message.reply_text(answer, parse_mode=parse_mode)
-                    except telegram.error.BadRequest as e:
-                        if str(e).startswith("Message must be non-empty"):  # first answer chunk from openai was empty
-                            i = -1  # try again to send first message
-                            continue
-                        else:
-                            sent_message = await update.message.reply_text(answer)
-                else:  # edit sent message
-                    # update only when 100 new symbols are ready
-                    if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
+
+                # update only when 100 new symbols are ready
+                if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
+                    continue
+
+                try:
+                    await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=parse_mode)
+                except telegram.error.BadRequest as e:
+                    if str(e).startswith("Message is not modified"):
                         continue
+                    else:
+                        await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
 
-                    try:
-                        await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id, parse_mode=parse_mode)
-                    except telegram.error.BadRequest as e:
-                        if str(e).startswith("Message is not modified"):
-                            continue
-                        else:
-                            await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id, message_id=sent_message.message_id)
-
-                    await asyncio.sleep(0.01)  # wait a bit to avoid flooding
+                await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
                 prev_answer = answer
 

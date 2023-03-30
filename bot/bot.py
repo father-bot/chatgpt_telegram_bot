@@ -152,6 +152,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 await update.message.reply_text(f"Starting new dialog due to timeout (<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
+        # in case of CancelledError
+        n_input_tokens, n_output_tokens = 0, 0
+        current_model = db.get_user_attribute(user_id, "current_model")
+
         try:
             # send placeholder message to user
             placeholder_message = await update.message.reply_text("...")
@@ -161,7 +165,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             _message = message or update.message.text
 
-            current_model = db.get_user_attribute(user_id, "current_model")
             dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
             parse_mode = {
                 "html": ParseMode.HTML,
@@ -185,13 +188,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             prev_answer = ""
             async for gen_item in gen:
-                status = gen_item[0]
-                if status == "not_finished":
-                    status, answer = gen_item
-                elif status == "finished":
-                    status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
-                else:
-                    raise ValueError(f"Streaming status {status} is unknown")
+                status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
 
                 answer = answer[:4096]  # telegram message limit
 
@@ -220,6 +217,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             )
 
             db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+
+        except asyncio.CancelledError:
+            # note: intermediate token updates only work when enable_message_streaming=True (config.yml)
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+            raise
+
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -242,7 +245,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await task
         except asyncio.CancelledError:
             await update.message.reply_text("✅ Canceled", parse_mode=ParseMode.HTML)
-            raise
         else:
             pass
         finally:

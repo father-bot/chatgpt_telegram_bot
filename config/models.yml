@@ -1,0 +1,45 @@
+available_text_models: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
+
+info:
+  gpt-3.5-turbo:
+    type: chat_completion
+    name: ChatGPT
+    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
+
+    price_per_1000_input_tokens: 0.002
+    price_per_1000_output_tokens: 0.002
+
+    scores:
+      Smart: 3
+      Fast: 5
+      Cheap: 5
+
+  gpt-4:
+    type: chat_completion
+    name: GPT-4
+    description: GPT-4 is the <b>smartest</b> and most advanced model in the world. But it is slower and not as cost-efficient as ChatGPT. Best choice for <b>complex</b> intellectual tasks.
+
+    price_per_1000_input_tokens: 0.03
+    price_per_1000_output_tokens: 0.06
+
+    scores:
+      Smart: 5
+      Fast: 2
+      Cheap: 2
+
+  text-davinci-003:
+    type: completion
+    name: GPT-3.5
+    description: GPT-3.5 is a legacy model. Actually there is <b>no reason to use it</b>, because it is more expensive and slower than ChatGPT, but just about as smart.
+
+    price_per_1000_input_tokens: 0.02
+    price_per_1000_output_tokens: 0.02
+
+    scores:
+      Smart: 3
+      Fast: 2
+      Cheap: 3
+
+  whisper:
+    type: audio
+    price_per_1_min: 0.006

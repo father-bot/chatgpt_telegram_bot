@@ -37,7 +37,9 @@ import openai_utils
 # setup
 db = database.Database()
 logger = logging.getLogger(__name__)
+
 user_semaphores = {}
+user_tasks = {}
 
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
@@ -140,15 +142,19 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if await is_previous_message_not_answered_yet(update, context): return
 
     user_id = update.message.from_user.id
-    chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+    async def message_handle_fn():
+        chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
-    async with user_semaphores[user_id]:
         # new dialog timeout
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
                 await update.message.reply_text(f"Starting new dialog due to timeout (<b>{openai_utils.CHAT_MODES[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+        # in case of CancelledError
+        n_input_tokens, n_output_tokens = 0, 0
+        current_model = db.get_user_attribute(user_id, "current_model")
 
         try:
             # send placeholder message to user
@@ -157,9 +163,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             # send typing action
             await update.message.chat.send_action(action="typing")
 
-            message = message or update.message.text
+            _message = message or update.message.text
 
-            current_model = db.get_user_attribute(user_id, "current_model")
             dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
             parse_mode = {
                 "html": ParseMode.HTML,
@@ -168,10 +173,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
-                gen = chatgpt_instance.send_message_stream(message, dialog_messages=dialog_messages, chat_mode=chat_mode)
+                gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
                 answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = await chatgpt_instance.send_message(
-                    message,
+                    _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode
                 )
@@ -183,13 +188,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             prev_answer = ""
             async for gen_item in gen:
-                status = gen_item[0]
-                if status == "not_finished":
-                    status, answer = gen_item
-                elif status == "finished":
-                    status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
-                else:
-                    raise ValueError(f"Streaming status {status} is unknown")
+                status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
 
                 answer = answer[:4096]  # telegram message limit
 
@@ -210,7 +209,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 prev_answer = answer
 
             # update user data
-            new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
+            new_dialog_message = {"user": _message, "bot": answer, "date": datetime.now()}
             db.set_dialog_messages(
                 user_id,
                 db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
@@ -218,6 +217,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             )
 
             db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+
+        except asyncio.CancelledError:
+            # note: intermediate token updates only work when enable_message_streaming=True (config.yml)
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+            raise
+
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -232,13 +237,28 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
+    async with user_semaphores[user_id]:
+        task = asyncio.create_task(message_handle_fn())
+        user_tasks[user_id] = task
+
+        try:
+            await task
+        except asyncio.CancelledError:
+            await update.message.reply_text("✅ Canceled", parse_mode=ParseMode.HTML)
+        else:
+            pass
+        finally:
+            if user_id in user_tasks:
+                del user_tasks[user_id]
+
 
 async def is_previous_message_not_answered_yet(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
 
     user_id = update.message.from_user.id
     if user_semaphores[user_id].locked():
-        text = "⏳ Please <b>wait</b> for a reply to the previous message"
+        text = "⏳ Please <b>wait</b> for a reply to the previous message\n"
+        text += "Or you can /cancel it"
         await update.message.reply_text(text, reply_to_message_id=update.message.id, parse_mode=ParseMode.HTML)
         return True
     else:
@@ -290,6 +310,19 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+
+
+async def cancel_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    if user_id in user_tasks:
+        task = user_tasks[user_id]
+        task.cancel()
+    else:
+        await update.message.reply_text("<i>Nothing to cancel...</i>", parse_mode=ParseMode.HTML)
 
 
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
@@ -478,6 +511,7 @@ def run_bot() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
+    application.add_handler(CommandHandler("cancel", cancel_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
 

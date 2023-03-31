@@ -64,6 +64,9 @@ If you want to add payments to your bot – write me on Telegram ([@karfly](http
 - `/settings` – Show settings
 - `/help` – Show help
 
+## Instructions to run on raspberry pi - arm64
+Clone the repo, update the image from mongo:latest to mongo:bionic in the docker-compose file and follow the setup instructions.
+
 ## Setup
 1. Get your [OpenAI API](https://openai.com/api/) key
 

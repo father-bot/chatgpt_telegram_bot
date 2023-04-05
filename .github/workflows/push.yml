@@ -1,0 +1,44 @@
+name: chatgpbot-pipeline
+on: push
+jobs:
+    deploy:
+     runs-on: ubuntu-latest
+     if: startsWith(github.ref, 'refs/tags')
+     steps:
+      - name: Extract Version
+        id: version_step
+        run: |
+          echo "##[set-output name=version;]VERSION=${GITHUB_REF#$"refs/tags/v"}"
+          echo "##[set-output name=version_tag;]"apuetz/chatgpt_telegram_bot":${GITHUB_REF#$"refs/tags/v"}"
+          echo "##[set-output name=latest_tag;]"apuetz/chatgpt_telegram_bot":latest"
+      - name: Print Version
+        run: |
+          echo ${{steps.version_step.outputs.version_tag}}
+          echo ${{steps.version_step.outputs.latest_tag}}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+      - name: PrepareReg Names
+        id: read-docker-image-identifiers
+        run: |
+          echo VERSION_TAG=$(echo ${{ steps.version_step.outputs.version_tag }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          echo LASTEST_TAG=$(echo ${{ steps.version_step.outputs.latest_tag  }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: |
+            ${{env.VERSION_TAG}}
+            ${{env.LASTEST_TAG}}
+          build-args: |
+            ${{steps.version_step.outputs.version}}

@@ -1,9 +1,13 @@
 import abc
+import os
+from collections import defaultdict
 from typing import Optional, Any
 
 import pymongo
 import uuid
 from datetime import datetime
+
+import yaml
 
 import config
 
@@ -82,14 +86,103 @@ class MongoDB(AbstractDB):
         )
 
 
+class PlainFileUser:
+
+    def __init__(self):
+        self.user = None
+        self.dialogs = {}
+
+    def _folder_name(self):
+        return self.user.get("username", str(self.user["_id"]))
+
+    def commit(self):
+        if not os.path.exists(os.path.join(PlainFileDB.DB_PATH, self._folder_name())):
+            os.makedirs(os.path.join(PlainFileDB.DB_PATH, self._folder_name()))
+        with open(os.path.join(PlainFileDB.DB_PATH, self._folder_name(), "user.yaml"), "w") as f:
+            yaml.safe_dump(self.user, f)
+        for dialog_id, dialog in self.dialogs.items():
+            with open(os.path.join(PlainFileDB.DB_PATH, self._folder_name(), f"dialog_{dialog_id}.yaml"), "w") as f:
+                yaml.safe_dump(dialog, f)
+
+
+
+class PlainFileDB(AbstractDB):
+    DB_PATH = "db"
+
+    def load_user(self, name):
+        path = os.path.join(self.DB_PATH, name)
+        for file in os.listdir(path):
+            if not file.endswith(".yaml"):
+                raise ValueError(f"Unknown file type {path}")
+            if file.startswith("user"):
+                with open(os.path.join(path, file), "r") as f:
+                    user = yaml.safe_load(f)
+                    self.user_collection[user["_id"]].user = user
+            elif file.startswith("dialog"):
+                with open(os.path.join(path, file), "r") as f:
+                    dialog = yaml.safe_load(f)
+                    self.user_collection[dialog["user_id"]].dialogs[dialog["_id"]] = dialog
+
+    def __init__(self):
+        self.user_collection = defaultdict(PlainFileUser)
+
+        if not os.path.exists(self.DB_PATH):
+            os.makedirs(self.DB_PATH)
+        for file in os.listdir(self.DB_PATH):
+            if not os.path.isdir(os.path.join(self.DB_PATH, file)):
+                raise ValueError(f"Unknown file type {file}")
+            self.load_user(file)
+
+    def check_if_user_exists(self, user_id: int, raise_exception: bool = False):
+        if self.user_collection[user_id].user is not None:
+            return True
+        else:
+            if raise_exception:
+                raise ValueError(f"User {user_id} does not exist")
+            else:
+                return False
+
+    def add_new_user(self, user: dict):
+        db_user = self.user_collection[user["_id"]]
+        db_user.user = user
+        db_user.commit()
+
+
+    def add_dialog(self, dialog: dict):
+        self.user_collection[dialog["user_id"]].dialogs[dialog["_id"]] = dialog
+
+        # update user's current dialog
+        self.user_collection[dialog["user_id"]].user["current_dialog_id"] = dialog["_id"]
+
+        self.user_collection[dialog["user_id"]].commit()
+
+    def get_user(self, user_id: int):
+        return self.user_collection[user_id].user
+
+    def set_user_attribute(self, user_id: int, key: str, value: Any):
+        self.user_collection[user_id].user[key] = value
+        self.user_collection[user_id].commit()
+
+    def get_dialog(self, dialog_id: int, user_id: int):
+        return self.user_collection[user_id].dialogs[dialog_id]
+
+    def set_dialog_messages(self, dialog_id: int, user_id: int, dialog_messages: list):
+        self.user_collection[user_id].dialogs[dialog_id]["messages"] = dialog_messages
+        self.user_collection[user_id].commit()
+
+
 class Database:
     db: AbstractDB
 
-    def __init__(self, db_type:str):
-        if db_type == "mongodb":
+    def __init__(self):
+        if config.db_type == "mongodb":
             self.db = MongoDB()
+        elif config.db_type == "plain_file":
+            self.db = PlainFileDB()
         else:
-            raise ValueError(f"Unknown database type {db_type}")
+            raise ValueError(f"Unknown database type {config.db_type}")
+    def check_if_user_exists(self, user_id: int, raise_exception: bool = False):
+        return self.db.check_if_user_exists(user_id, raise_exception)
 
     def add_new_user(
             self,

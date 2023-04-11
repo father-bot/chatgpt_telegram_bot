@@ -83,9 +83,9 @@ class ChatGPT:
                         delta = r_item.choices[0].delta
                         if "content" in delta:
                             answer += delta.content
-                            yield "not_finished", answer
-
-                    n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
+                            n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
+                            n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
+                            yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
                     r_gen = await openai.Completion.acreate(
@@ -98,20 +98,18 @@ class ChatGPT:
                     answer = ""
                     async for r_item in r_gen:
                         answer += r_item.choices[0].text
-                        yield "not_finished", answer
-
-                    n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
+                        n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
+                        n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
+                        yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
                 answer = self._postprocess_answer(answer)
 
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
-                    raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
+                    raise e
 
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
-
-        n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
         yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
 

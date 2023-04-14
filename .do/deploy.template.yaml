@@ -1,0 +1,37 @@
+spec:
+  name: noa-telegram
+  region: ams
+  services:
+    - name: mongo
+      image: mongo:latest
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      envs:
+        - key: MONGODB_PORT
+          value: ${MONGODB_PORT:-27017}
+    - name: chatgpt_telegram_bot
+      dockerfile_path: Dockerfile
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      envs:
+        - key: MONGO_HOST
+          value: mongo.YOUR_INTERNAL_DOMAIN
+        - key: MONGO_PORT
+          value: ${MONGODB_PORT:-27017}
+    - name: mongo_express
+      image: mongo-express:latest
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      envs:
+        - key: ME_CONFIG_MONGODB_SERVER
+          value: mongo.YOUR_INTERNAL_DOMAIN
+        - key: ME_CONFIG_MONGODB_PORT
+          value: ${MONGODB_PORT:-27017}
+        - key: ME_CONFIG_MONGODB_ENABLE_ADMIN
+          value: false
+        - key: ME_CONFIG_MONGODB_AUTH_DATABASE
+          value: chatgpt_telegram_bot
+        - key: ME_CONFIG_BASICAUTH_USERNAME
+          value: ${MONGO_EXPRESS_USERNAME:-username}
+        - key: ME_CONFIG_BASICAUTH_PASSWORD
+          value: ${MONGO_EXPRESS_PASSWORD:-password}

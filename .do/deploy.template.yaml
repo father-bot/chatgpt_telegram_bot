@@ -3,7 +3,9 @@ spec:
   region: ams
   services:
     - name: mongo
-      image: mongo:latest
+      image:
+        repository: mongo
+        tag: latest
       instance_size_slug: basic-xxs
       instance_count: 1
       envs:
@@ -23,7 +25,9 @@ spec:
         - path: /
       run_command: python3 bot/bot.py
     - name: mongo_express
-      image: mongo-express:latest
+      image:
+        repository: mongo-express
+        tag: latest
       instance_size_slug: basic-xxs
       instance_count: 1
       envs:

@@ -45,7 +45,7 @@ santi:
       - Quick readability with keywords and advanced terms
       - Hacker mindset and out-of-the-box thinking
       - Use analytical thinking
-      - Use emojis and use <b>tags</b> for the main titles
+      - Use "<b>", "<u>", "<i>" tags and/or emojis but only to improve user readability
       - Use bullet points over sentences whenever possible
   parse_mode: html
 

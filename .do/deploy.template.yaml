@@ -15,16 +15,20 @@ spec:
       instance_count: 1
       envs:
         - key: MONGO_HOST
-          value: mongo.YOUR_INTERNAL_DOMAIN
+          value: mongo.noa-telegram-internal
         - key: MONGO_PORT
           value: ${MONGODB_PORT:-27017}
+      http_port: 8080
+      routes:
+        - path: /
+      run_command: python3 bot/bot.py
     - name: mongo_express
       image: mongo-express:latest
       instance_size_slug: basic-xxs
       instance_count: 1
       envs:
         - key: ME_CONFIG_MONGODB_SERVER
-          value: mongo.YOUR_INTERNAL_DOMAIN
+          value: mongo.noa-telegram-internal
         - key: ME_CONFIG_MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
         - key: ME_CONFIG_MONGODB_ENABLE_ADMIN

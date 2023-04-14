@@ -44,8 +44,9 @@ santi:
       - SUPER concise response, but precise terms
       - Quick readability with keywords and advanced terms
       - Hacker mindset and out-of-the-box thinking
-      - Use bullet points over sentences whenever possible
       - Use analytical thinking
+      - Use emojis to improve readability
+      - Use bullet points over sentences whenever possible
   parse_mode: html
 
 thomas:

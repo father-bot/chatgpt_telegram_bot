@@ -11,7 +11,7 @@ spec:
       envs:
         - key: MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
-    - name: chatgpt_telegram_bot
+    - name: noa-telegram-bot
       dockerfile_path: Dockerfile
       instance_size_slug: basic-xxs
       instance_count: 1

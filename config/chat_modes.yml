@@ -45,7 +45,7 @@ santi:
       - Quick readability with keywords and advanced terms
       - Hacker mindset and out-of-the-box thinking
       - Use analytical thinking
-      - Use emojis to improve readability
+      - Use emojis in titles or to greatly improve readability
       - Use bullet points over sentences whenever possible
   parse_mode: html
 

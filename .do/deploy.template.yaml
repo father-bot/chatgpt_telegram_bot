@@ -2,17 +2,11 @@ spec:
   name: noa-telegram
   region: ams
   services:
-    - name: mongo
-      image:
-        registry_type: DOCKER_HUB
-        repository: mongo
-        tag: latest
-      instance_size_slug: basic-xxs
-      instance_count: 1
-      envs:
-        - key: MONGODB_PORT
-          value: ${MONGODB_PORT:-27017}
-    - name: noa-telegram-bot
+   - name: noa-telegram-bot
+      source:
+        github:
+          repo: santiagomalter/chatgpt_telegram_bot
+          branch: main
       dockerfile_path: Dockerfile
       instance_size_slug: basic-xxs
       instance_count: 1
@@ -25,6 +19,16 @@ spec:
       routes:
         - path: /
       run_command: python3 bot/bot.py
+    - name: mongo
+      image:
+        registry_type: DOCKER_HUB
+        repository: mongo
+        tag: latest
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      envs:
+        - key: MONGODB_PORT
+          value: ${MONGODB_PORT:-27017}
     - name: mongo-express
       image:
         registry_type: DOCKER_HUB

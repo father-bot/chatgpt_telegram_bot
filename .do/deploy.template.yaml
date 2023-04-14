@@ -9,6 +9,8 @@ spec:
         tag: latest
       instance_size_slug: basic-xxs
       instance_count: 1
+      routes:
+        - path: /mongo/
       envs:
         - key: MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
@@ -35,6 +37,8 @@ spec:
         tag: latest
       instance_size_slug: basic-xxs
       instance_count: 1
+      routes:
+        - path: /express/
       envs:
         - key: ME_CONFIG_MONGODB_SERVER
           value: mongo.noa-telegram-internal

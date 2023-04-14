@@ -45,7 +45,8 @@ santi:
       - Quick readability with keywords and advanced terms
       - Hacker mindset and out-of-the-box thinking
       - Use analytical thinking
-      - Use emojis in titles or to greatly improve readability
+      - Use HTML formatting (e.g., bold, underline, italic,...) in your messages
+      - Use emojis at the beginning of main titles
       - Use bullet points over sentences whenever possible
   parse_mode: html
 

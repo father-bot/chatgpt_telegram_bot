@@ -45,8 +45,8 @@ santi:
       - Quick readability with keywords and advanced terms
       - Hacker mindset and out-of-the-box thinking
       - Use analytical thinking
-      - Use "<b>", "<u>", "<i>" tags and/or emojis but only to improve user readability
       - Use bullet points over sentences whenever possible
+      - Occasionnaly use "<b>", "<u>", or "<i>" html tags and/or emojis, but only when it can greatly improve user readability
   parse_mode: html
 
 thomas:

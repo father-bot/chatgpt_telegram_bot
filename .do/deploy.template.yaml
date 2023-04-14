@@ -4,6 +4,7 @@ spec:
   services:
     - name: mongo
       image:
+        registry_type: DOCKER_HUB
         repository: mongo
         tag: latest
       instance_size_slug: basic-xxs
@@ -26,6 +27,7 @@ spec:
       run_command: python3 bot/bot.py
     - name: mongo-express
       image:
+        registry_type: DOCKER_HUB
         repository: mongo-express
         tag: latest
       instance_size_slug: basic-xxs

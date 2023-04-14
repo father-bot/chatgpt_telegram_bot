@@ -36,7 +36,7 @@ spec:
         - key: ME_CONFIG_MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
         - key: ME_CONFIG_MONGODB_ENABLE_ADMIN
-          value: false
+          value: "false"
         - key: ME_CONFIG_MONGODB_AUTH_DATABASE
           value: chatgpt_telegram_bot
         - key: ME_CONFIG_BASICAUTH_USERNAME

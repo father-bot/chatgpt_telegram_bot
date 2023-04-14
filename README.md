@@ -1,5 +1,8 @@
 # ChatGPT Telegram Bot: **GPT-4. Fast. No daily limits. Special chat modes**
 
+
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/santiagomalter/chatgpt_telegram_bot/tree/main)
+
 <div align="center">
 <img src="https://raw.githubusercontent.com/karfly/chatgpt_telegram_bot/main/static/header.png" align="center" style="width: 100%" />
 </div>

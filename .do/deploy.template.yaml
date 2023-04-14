@@ -14,7 +14,7 @@ spec:
       envs:
         - key: MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
-    - name: noa-telegram-bot
+    - name: bot
       github:
         repo: santiagomalter/chatgpt_telegram_bot
         branch: main

@@ -24,7 +24,7 @@ spec:
       routes:
         - path: /
       run_command: python3 bot/bot.py
-    - name: mongo_express
+    - name: mongo-express
       image:
         repository: mongo-express
         tag: latest

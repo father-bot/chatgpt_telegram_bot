@@ -1,1 +1,1 @@
-docker-compose --env-file config/config.env up --build
+docker-compose --env-file config/config.env up --build --detach

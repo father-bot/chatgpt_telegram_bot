@@ -13,10 +13,9 @@ spec:
         - key: MONGODB_PORT
           value: ${MONGODB_PORT:-27017}
     - name: noa-telegram-bot
-      source:
-        github:
-          repo: santiagomalter/chatgpt_telegram_bot
-          branch: main
+      github:
+        repo: santiagomalter/chatgpt_telegram_bot
+        branch: main
       dockerfile_path: Dockerfile
       instance_size_slug: basic-xxs
       instance_count: 1

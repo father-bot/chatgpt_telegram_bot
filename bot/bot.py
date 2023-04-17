@@ -89,7 +89,7 @@ async def register_chat_if_not_exists(update: Update):
         db.set_chat_attribute(chat_id, "n_transcribed_seconds", 0.0)
 
 
-async def start_handle(update: Update):
+async def start_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
     chat_id = update.message.chat_id
 
@@ -104,7 +104,7 @@ async def start_handle(update: Update):
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
 
-async def help_handle(update: Update):
+async def help_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
     chat_id = update.message.chat_id
     db.set_chat_attribute(chat_id, "last_interaction", datetime.now())
@@ -295,7 +295,7 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     await message_handle(update, context, message=transcribed_text)
 
 
-async def new_dialog_handle(update: Update):
+async def new_dialog_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
     if await is_previous_message_not_answered_yet(update): return
 
@@ -309,7 +309,7 @@ async def new_dialog_handle(update: Update):
     await update.message.reply_text(f"{openai_utils.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
-async def cancel_handle(update: Update):
+async def cancel_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
 
     chat_id = update.message.chat_id
@@ -322,7 +322,7 @@ async def cancel_handle(update: Update):
         await update.message.reply_text("<i>Nothing to cancel...</i>", parse_mode=ParseMode.HTML)
 
 
-async def show_chat_modes_handle(update: Update):
+async def show_chat_modes_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
     if await is_previous_message_not_answered_yet(update): return
 
@@ -337,7 +337,7 @@ async def show_chat_modes_handle(update: Update):
     await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
 
 
-async def set_chat_mode_handle(update: Update):
+async def set_chat_mode_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update.callback_query)
     chat_id = update.callback_query.message.chat_id
 
@@ -378,7 +378,7 @@ def get_settings_menu(chat_id: int):
     return text, reply_markup
 
 
-async def settings_handle(update: Update):
+async def settings_handle(update: Update, context: CallbackContext):
     await register_chat_if_not_exists(update)
     if await is_previous_message_not_answered_yet(update): return
 
@@ -445,7 +445,7 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
-async def edited_message_handle(update: Update):
+async def edited_message_handle(update: Update, context: CallbackContext):
     text = "🥲 Unfortunately, message <b>editing</b> is not supported"
     await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 

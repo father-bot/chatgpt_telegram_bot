@@ -5,8 +5,6 @@ import openai
 openai.api_key = config.openai_api_key
 
 
-CHAT_MODES = config.chat_modes
-
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
     "max_tokens": 1000,
@@ -22,7 +20,7 @@ class ChatGPT:
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in CHAT_MODES.keys():
+        if chat_mode not in config.chat_modes.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
@@ -62,7 +60,7 @@ class ChatGPT:
         return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in CHAT_MODES.keys():
+        if chat_mode not in config.chat_modes.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
@@ -114,7 +112,7 @@ class ChatGPT:
         yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
-        prompt = CHAT_MODES[chat_mode]["prompt_start"]
+        prompt = config.chat_modes[chat_mode]["prompt_start"]
         prompt += "\n\n"
 
         # add chat context
@@ -131,7 +129,7 @@ class ChatGPT:
         return prompt
 
     def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
-        prompt = CHAT_MODES[chat_mode]["prompt_start"]
+        prompt = config.chat_modes[chat_mode]["prompt_start"]
 
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:
@@ -185,3 +183,14 @@ class ChatGPT:
 async def transcribe_audio(audio_file):
     r = await openai.Audio.atranscribe("whisper-1", audio_file)
     return r["text"]
+
+
+async def generate_images(prompt, n_images=4):
+    r = await openai.Image.acreate(prompt=prompt, n=n_images, size="512x512")
+    image_urls = [item.url for item in r.data]
+    return image_urls
+
+
+async def is_content_acceptable(prompt):
+    r = await openai.Moderation.acreate(input=prompt)
+    return not all(r.results[0].categories.values())

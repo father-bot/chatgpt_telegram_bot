@@ -25,6 +25,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - No request limits
 - Message streaming (watch demo)
 - GPT-4 support
+- Group Chat support (/help_group_chat to get instructions)
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
 - Voice message recognition
 - Code highlighting
@@ -48,10 +49,10 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - [ЮMoney](https://yoomoney.ru)
 - and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
 
-If you want to add payments to your bot – write me on Telegram ([@karfly](https://t.me/karfly)).
+If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)).
 
 ## News
-- *21 Apr 2023*: DALLE 2 support
+- *21 Apr 2023*: DALLE 2 support, Group Chat support (/help_group_chat to get instructions)
 - *24 Mar 2023*: GPT-4 support. Run `/settings` command to choose model
 - *15 Mar 2023*: Added message streaming. Now you don't have to wait until the whole message is ready, it's streamed to Telegram part-by-part (watch demo)
 - *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`

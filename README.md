@@ -29,7 +29,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
 - Voice message recognition
 - Code highlighting
-- Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 📝 Text Improver and 🎬 Movie Expert. You can easily create your own chat modes by editing `config/chat_modes.yml`
+- 15 special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 👩‍🎨 Artist, 🧠 Psychologist, 🚀 Elon Musk and other. You can easily create your own chat modes by editing `config/chat_modes.yml`
 - Support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction)
 - List of allowed Telegram users
 - Track $ balance spent on OpenAI API
@@ -52,7 +52,10 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)).
 
 ## News
-- *21 Apr 2023*: DALLE 2 support, Group Chat support (/help_group_chat to get instructions)
+- *21 Apr 2023*:
+    - DALLE 2 support
+    - Group Chat support (/help_group_chat to get instructions)
+    - 10 new hot chat modes and updated chat mode menu with pagination: 🇬🇧 English Tutor, 🧠 Psychologist, 🚀 Elon Musk, 📊 SQL Assistant and other.
 - *24 Mar 2023*: GPT-4 support. Run `/settings` command to choose model
 - *15 Mar 2023*: Added message streaming. Now you don't have to wait until the whole message is ready, it's streamed to Telegram part-by-part (watch demo)
 - *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`

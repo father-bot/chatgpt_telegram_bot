@@ -119,7 +119,7 @@ async def is_bot_mentioned(update: Update, context: CallbackContext):
          if message.chat.type == "private":
              return True
 
-         if message.text is not None and config.bot_username in message.text:
+         if message.text is not None and ("@" + context.bot.username) in message.text:
              return True
 
          if message.reply_to_message is not None:

@@ -44,7 +44,7 @@ class ChatGPT:
                     )
                     answer = r.choices[0].text
                 else:
-                    raise ValueError(f"Unknown model: {model}")
+                    raise ValueError(f"Unknown model: {self.model}")
 
                 answer = self._postprocess_answer(answer)
                 n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens

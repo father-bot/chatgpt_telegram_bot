@@ -3,6 +3,7 @@ openai_api_key: ""
 use_chatgpt_api: true
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
+return_n_generated_images: 1
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
 
 # prices

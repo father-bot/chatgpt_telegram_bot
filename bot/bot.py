@@ -49,6 +49,21 @@ HELP_MESSAGE = """Commands:
 ⚪ /settings – Show settings
 ⚪ /balance – Show balance
 ⚪ /help – Show help
+
+🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
+👥 Add bot to <b>group chat</b>: /help_group_chat
+🎤 You can send <b>Voice Messages</b> instead of text
+"""
+
+HELP_GROUP_CHAT_MESSAGE = """You can add bot to any <b>group chat</b> to help and entertain its participants!
+
+Instructions (see <b>video</b> below):
+1. Add the bot to the group chat
+2. Make it an <b>admin</b>, so that it can see messages (all other rights can be restricted)
+3. You're awesome!
+
+To get a reply from the bot in the chat – @ <b>tag</b> it or <b>reply</b> to its message.
+For example: "{bot_username} write a poem about Telegram"
 """
 
 
@@ -97,6 +112,25 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
         db.set_user_attribute(user.id, "n_generated_images", 0)
 
 
+async def is_bot_mentioned(update: Update, context: CallbackContext):
+     try:
+         message = update.message
+
+         if message.chat.type == "private":
+             return True
+
+         if message.text is not None and config.bot_username in message.text:
+             return True
+
+         if message.reply_to_message is not None:
+             if message.reply_to_message.from_user.id == context.bot.id:
+                 return True
+     except:
+         return True
+     else:
+         return False
+
+
 async def start_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     user_id = update.message.from_user.id
@@ -119,6 +153,17 @@ async def help_handle(update: Update, context: CallbackContext):
     await update.message.reply_text(HELP_MESSAGE, parse_mode=ParseMode.HTML)
 
 
+async def help_group_chat_handle(update: Update, context: CallbackContext):
+     await register_user_if_not_exists(update, context, update.message.from_user)
+     user_id = update.message.from_user.id
+     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+     text = HELP_GROUP_CHAT_MESSAGE.format(bot_username="@" + context.bot.username)
+
+     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+     await update.message.reply_video(config.help_group_chat_video_path)
+
+
 async def retry_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
@@ -138,10 +183,20 @@ async def retry_handle(update: Update, context: CallbackContext):
 
 
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+    # check if bot was mentioned (for group chats)
+    if not await is_bot_mentioned(update, context):
+        return
+
     # check if message is edited
     if update.edited_message is not None:
         await edited_message_handle(update, context)
         return
+
+    _message = message or update.message.text
+
+    # remove bot mention (in group chats)
+    if update.message.chat.type != "private":
+        _message = _message.replace("@" + context.bot.username, "").strip()
 
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
@@ -172,7 +227,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             # send typing action
             await update.message.chat.send_action(action="typing")
 
-            _message = message or update.message.text
             if _message is None or len(_message) == 0:
                  await update.message.reply_text("🥲 You sent <b>empty message</b>. Please, try again!", parse_mode=ParseMode.HTML)
                  return
@@ -278,6 +332,10 @@ async def is_previous_message_not_answered_yet(update: Update, context: Callback
 
 
 async def voice_message_handle(update: Update, context: CallbackContext):
+    # check if bot was mentioned (for group chats)
+    if not await is_bot_mentioned(update, context):
+        return
+
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
 
@@ -561,6 +619,7 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
+    application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))

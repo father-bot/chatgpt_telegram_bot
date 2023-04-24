@@ -619,8 +619,9 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
 
 async def edited_message_handle(update: Update, context: CallbackContext):
-    text = "🥲 Unfortunately, message <b>editing</b> is not supported"
-    await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
+    if update.edited_message.chat.type == "private":
+        text = "🥲 Unfortunately, message <b>editing</b> is not supported"
+        await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
 async def error_handle(update: Update, context: CallbackContext) -> None:

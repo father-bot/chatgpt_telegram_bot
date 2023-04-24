@@ -9,6 +9,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 ENV PIP_DEFAULT_TIMEOUT=100
 
 RUN apk add --no-cache python3-dev build-base libffi-dev openssl-dev ffmpeg
+RUN apk add --no-cache bash
 
 RUN mkdir -p /code
 ADD . /code

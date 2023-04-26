@@ -13,7 +13,7 @@ with open(config_dir / "config.yml", 'r') as f:
 telegram_token = os.environ["TELEGRAM_TOKEN"]
 openai_api_key = os.environ["OPENAI_API_KEY"]
 use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
-allowed_telegram_usernames = os.environ.get('ALLOWED_TELEGRAM_USERNAMES', '').split(',') or []
+allowed_telegram_usernames = os.environ["ALLOWED_TELEGRAM_USERNAMES"].split(',') or []
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
 enable_message_streaming = config_yaml.get("enable_message_streaming", True)
 return_n_generated_images = config_yaml.get("return_n_generated_images", 1)

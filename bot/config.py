@@ -13,7 +13,8 @@ with open(config_dir / "config.yml", 'r') as f:
 telegram_token = os.environ["TELEGRAM_TOKEN"]
 openai_api_key = os.environ["OPENAI_API_KEY"]
 use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
-allowed_telegram_usernames = os.environ["ALLOWED_TELEGRAM_USERNAMES"].split(',') or []
+env_allowed_users = os.environ.get('ALLOWED_TELEGRAM_USERNAMES', '')
+allowed_telegram_usernames = (lambda s: s.split(',') if s else [])(env_allowed_users)
 new_dialog_timeout = config_yaml["new_dialog_timeout"]
 enable_message_streaming = config_yaml.get("enable_message_streaming", True)
 return_n_generated_images = config_yaml.get("return_n_generated_images", 1)
@@ -30,3 +31,5 @@ with open(config_dir / "models.yml", 'r') as f:
 
 # files
 help_group_chat_video_path = Path(__file__).parent.parent.resolve() / "static" / "help_group_chat.mp4"
+
+split_string = lambda s: s.split(',') if s else []

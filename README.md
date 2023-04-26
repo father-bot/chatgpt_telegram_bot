@@ -21,7 +21,7 @@ This repo is ChatGPT re-created as Telegram Bot. **And it works great.**
 You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/chatgpt_karfly_bot)
 
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/BUrgfI?referralCode=AkEaYM)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/IG_WDs?referralCode=AkEaYM)
 
 
 ## Features

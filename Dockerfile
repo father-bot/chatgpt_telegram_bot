@@ -17,4 +17,4 @@ WORKDIR /code
 
 RUN pip3 install -r requirements.txt
 
-CMD ["bash"]
+CMD ["python3", "bot/bot.py"]

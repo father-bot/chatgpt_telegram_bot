@@ -18,11 +18,6 @@ services:
     build:
       context: "."
       dockerfile: Dockerfile
-    environment:
-      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      MONGODB_URI: ${MONGODB_URI}
-      ALLOWED_TELEGRAM_USERNAMES: ${ALLOWED_TELEGRAM_USERNAMES}
     depends_on:
       - mongo
 

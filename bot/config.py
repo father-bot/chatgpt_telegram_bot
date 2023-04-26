@@ -36,5 +36,3 @@ with open(config_dir / "models.yml", 'r') as f:
 
 # files
 help_group_chat_video_path = Path(__file__).parent.parent.resolve() / "static" / "help_group_chat.mp4"
-
-split_string = lambda s: s.split(',') if s else []

@@ -20,8 +20,8 @@ This repo is ChatGPT re-created as Telegram Bot. **And it works great.**
 
 You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/chatgpt_karfly_bot)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/V7XQsK?referralCode=AkEaYM)
 
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/V7XQsK?referralCode=AkEaYM)
 
 ## Features
 - Low latency replies (it usually takes about 3-5 seconds)

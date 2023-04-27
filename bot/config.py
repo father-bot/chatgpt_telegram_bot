@@ -1,4 +1,5 @@
 import json
+import os
 
 import yaml
 import dotenv
@@ -7,7 +8,7 @@ from pathlib import Path
 config_dir = Path(__file__).parent.parent.resolve() / "config"
 
 # load .env config
-config_env = dotenv.dotenv_values(config_dir / "config.env")
+config_env = os.environ.copy()
 
 # config parameters
 telegram_token = config_env["telegram_token"]

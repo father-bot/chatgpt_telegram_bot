@@ -79,13 +79,14 @@ If you want to add payments to your bot and create profitable business – write
 
 2. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
 
-3. Edit `config/config.example.yml` to set your tokens and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
+3. Edit `config/config.example.env` to set your tokens and run the command below:
     ```bash
-    mv config/config.example.yml config/config.yml
     mv config/config.example.env config/config.env
     ```
+    
+4. You can edit the configs in config/config.yml to have the model behave differently. They already come with some opinionated default settings.
 
-4. 🔥 And now **run**:
+5. 🔥 And now **run**:
     ```bash
     docker-compose --env-file config/config.env up --build
     ```

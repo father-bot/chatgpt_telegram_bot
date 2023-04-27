@@ -33,7 +33,7 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
-
+import text_to_speech
 
 # setup
 db = database.Database()
@@ -181,7 +181,7 @@ async def retry_handle(update: Update, context: CallbackContext):
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
 
-async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True, output_audio_version=False):
     # check if bot was mentioned (for group chats)
     if not await is_bot_mentioned(update, context):
         return
@@ -270,6 +270,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
+
+                if status == "finished":
+                    audio_url = text_to_speech.create_audio(answer)
+                    await update.message.reply_voice(audio_url)
 
                 prev_answer = answer
 

@@ -13,15 +13,15 @@ config_env = os.environ.copy()
 # config parameters
 telegram_token = config_env["telegram_token"]
 openai_api_key = config_env["openai_api_key"]
-use_chatgpt_api = config_env.get("use_chatgpt_api", True)
+use_chatgpt_api = bool(config_env.get("use_chatgpt_api", True))
 if config_env["allowed_telegram_usernames"]:
     allowed_telegram_usernames = json.loads(config_env["allowed_telegram_usernames"])
 else:
     allowed_telegram_usernames = []
 new_dialog_timeout = config_env["new_dialog_timeout"]
-enable_message_streaming = config_env.get("enable_message_streaming", True)
-return_n_generated_images = config_env.get("return_n_generated_images", 1)
-n_chat_modes_per_page = config_env.get("n_chat_modes_per_page", 5)
+enable_message_streaming = bool(config_env.get("enable_message_streaming", True))
+return_n_generated_images = int(config_env.get("return_n_generated_images", 1))
+n_chat_modes_per_page = int(config_env.get("n_chat_modes_per_page", 5))
 mongodb_uri = config_env["mongodb_uri"]
 mongodb_user = config_env["mongodb_user"]
 mongodb_pass = config_env["mongodb_pass"]

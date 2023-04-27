@@ -2,7 +2,7 @@ available_text_models: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
 
 info:
   gpt-3.5-turbo:
-    type: chat_completion
+    type: gpt-3.5
     name: ChatGPT
     description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
 
@@ -29,8 +29,8 @@ info:
 
   text-davinci-003:
     type: completion
-    name: GPT-3.5
-    description: GPT-3.5 is a legacy model. Actually there is <b>no reason to use it</b>, because it is more expensive and slower than ChatGPT, but just about as smart.
+    name: davinci-003
+    description: Davinci-003 is too expensive and not worth it. Use it only if you have a lot of money and want to show off.
 
     price_per_1000_input_tokens: 0.02
     price_per_1000_output_tokens: 0.02

@@ -23,7 +23,8 @@ enable_message_streaming = config_env.get("enable_message_streaming", True)
 return_n_generated_images = config_env.get("return_n_generated_images", 1)
 n_chat_modes_per_page = config_env.get("n_chat_modes_per_page", 5)
 mongodb_uri = config_env["mongodb_uri"]
-print(f"mongodb_uri: {mongodb_uri}")
+mongodb_user = config_env["mongodb_user"]
+mongodb_pass = config_env["mongodb_pass"]
 
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r') as f:

@@ -11,9 +11,11 @@ ENV PIP_DEFAULT_TIMEOUT=100
 RUN apk update && apk add --no-cache ffmpeg
 
 RUN mkdir -p /code
-ADD . /code
 WORKDIR /code
+ADD requirements.txt .
 
 RUN pip3 install -r requirements.txt
+
+ADD . .
 
 CMD ["python3", "bot/bot.py"]

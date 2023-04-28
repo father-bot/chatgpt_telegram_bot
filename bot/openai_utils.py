@@ -3,6 +3,7 @@ import os
 import openai
 import tiktoken
 import faiss
+from datetime import datetime
 from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
@@ -37,7 +38,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(dialog_messages, chat_mode)
                     print("DIALOG_MESSAGES ----------------------------------------")
                     print(dialog_messages)
                     print("\n ---------------------------------------------- \n\n\n\n")
@@ -73,7 +74,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(dialog_messages, chat_mode)
                     # ADD HERE LANGCHAIN
 
                     r_gen = await openai.ChatCompletion.acreate(
@@ -136,14 +137,14 @@ class ChatGPT:
 
         return prompt
 
-    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
+    def _generate_prompt_messages(self, dialog_messages, chat_mode):
         prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt += "\n\n"
 
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:
             messages.append({"role": "user", "content": dialog_message["user"]})
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
-        messages.append({"role": "user", "content": message})
 
         return messages
 
@@ -189,15 +190,16 @@ class ChatGPT:
 
     async def _create_chain(self, prompt, message):
 
-
-
-        template = """
-            Albert Data: {albert_data}
-            Chat History: {chat_history}
+        template = f"""
+            Current Date and Time: {datetime.now().strftime("%d-%B-%Y at %H:%M")} \n\n
+            The following is Data about Albert, use it to provide better answers about him: {{albert_data}} \n\n
+            The following is this Conversation's History: {{conversation_history}} \n\n
+            Last User Prompt: {message} \n
+            Assistant Response: 
             """
-        
+
         prompt_template = PromptTemplate(
-            input_variables=["chat_history", "albert_data"],
+            input_variables=["conversation_history", "albert_data"],
             template=template
         )
 
@@ -218,7 +220,7 @@ class ChatGPT:
         print(docs_data)
         print("\n ---------------------------------------------- \n\n\n\n")
 
-        answer = llm_chain.run(chat_history=prompt, albert_data=docs_data)
+        answer = llm_chain.run(conversation_history=prompt, albert_data=docs_data)
         return answer
 
     async def _ingest_docs(self):

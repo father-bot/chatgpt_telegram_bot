@@ -3,9 +3,7 @@ import os
 import openai
 import tiktoken
 import faiss
-from datetime import datetime
 from langchain import OpenAI, LLMChain, PromptTemplate
-from langchain.llms import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
@@ -22,7 +20,7 @@ OPENAI_COMPLETION_OPTIONS = {
 }
 
 llm=OpenAI()
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(openai_api_key=config.openai_api_key, chunk_size=1000)
 
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
@@ -224,9 +222,8 @@ class ChatGPT:
         return answer
 
     async def _ingest_docs(self):
-
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        file = os.path.join(script_dir, 'data', 'full.txt')
+        file = os.path.join(script_dir, 'data', 'Basic.txt')
 
         raw_text = ""
 
@@ -234,10 +231,8 @@ class ChatGPT:
             raw_text = " ".join(line.strip() for line in f) 
         
         text_splitter = CharacterTextSplitter(
-            separator = " ",
             chunk_size = 1000,
-            chunk_overlap  = 200,
-            length_function = len,
+            chunk_overlap  = 0,
         )
 
         texts = text_splitter.split_text(raw_text)

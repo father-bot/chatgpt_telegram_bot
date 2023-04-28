@@ -1,25 +1,28 @@
 import config
 import os
-import json
 import openai
 import tiktoken
 import faiss
-from langchain.chains.question_answering import load_qa_chain
+from datetime import datetime
+from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.llms import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
 
 openai.api_key = config.openai_api_key
+os.environ["OPENAI_API_KEY"] = config.openai_api_key
 
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
     "max_tokens": 1000,
     "top_p": 1,
-    "frequency_penalty": 0,
+    "frequency_penalty": 0.5,
     "presence_penalty": 0
 }
 
+llm=OpenAI()
+embeddings = OpenAIEmbeddings()
 
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
@@ -29,6 +32,7 @@ class ChatGPT:
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
+        self.vectorDB = await self._ingest_docs()
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
@@ -36,28 +40,21 @@ class ChatGPT:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                    r = await create_chain(messages, message)
-                    print(r)
-                    # r = await openai.ChatCompletion.acreate(
-                    #     model=self.model,
-                    #     messages=messages,
-                    #     **OPENAI_COMPLETION_OPTIONS
-                    # )
+                    print("DIALOG_MESSAGES ----------------------------------------")
+                    print(dialog_messages)
+                    print("\n ---------------------------------------------- \n\n\n\n")
+                    r = await self._create_chain(prompt=messages, message=message)
                     answer = r
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    # ADD HERE LANGCHAIN
-                    r = await openai.Completion.acreate(
-                        engine=self.model,
-                        prompt=prompt,
-                        **OPENAI_COMPLETION_OPTIONS
-                    )
-                    answer = r.choices[0].text
+                    r = await self._create_chain(prompt=prompt, message=message)
+                    answer = r
                 else:
                     raise ValueError(f"Unknown model: {self.model}")
 
                 answer = self._postprocess_answer(answer)
-                n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
+                # n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
+                n_input_tokens, n_output_tokens = 1, 1
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
                     raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
@@ -192,6 +189,60 @@ class ChatGPT:
 
         return n_input_tokens, n_output_tokens
 
+    async def _create_chain(self, prompt, message):
+
+
+
+        template = """
+            Albert Data: {albert_data}
+            Chat History: {chat_history}
+            """
+        
+        prompt_template = PromptTemplate(
+            input_variables=["chat_history", "albert_data"],
+            template=template
+        )
+
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt_template,
+        )
+
+        docs_data = self.vectorDB.similarity_search(message)
+
+        print("\n\n\n\n MESSAGE -------------------------------------- \n")
+        print(message)
+        print("\n ---------------------------------------------- \n\n\n\n")
+        print("\n\n\n PROMPT -------------------------- \n")
+        print(prompt)
+        print("\n ---------------------------------------------- \n\n\n\n")
+        print("DOCS_DATA ----------------------------------------")
+        print(docs_data)
+        print("\n ---------------------------------------------- \n\n\n\n")
+
+        answer = llm_chain.run(chat_history=prompt, albert_data=docs_data)
+        return answer
+
+    async def _ingest_docs(self):
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file = os.path.join(script_dir, 'data', 'full.txt')
+
+        raw_text = ""
+
+        with open(file) as f:
+            raw_text = " ".join(line.strip() for line in f) 
+        
+        text_splitter = CharacterTextSplitter(
+            separator = " ",
+            chunk_size = 1000,
+            chunk_overlap  = 200,
+            length_function = len,
+        )
+
+        texts = text_splitter.split_text(raw_text)
+
+        return FAISS.from_texts(texts, embeddings)
 
 async def transcribe_audio(audio_file):
     r = await openai.Audio.atranscribe("whisper-1", audio_file)
@@ -207,34 +258,3 @@ async def generate_images(prompt, n_images=4):
 async def is_content_acceptable(prompt):
     r = await openai.Moderation.acreate(input=prompt)
     return not all(r.results[0].categories.values())
-
-async def create_chain(prompt, message, filename = 'full.txt'):
-    # Initialize OpenAI language model, conversation chain and embeddings
-    llm = OpenAI(temperature=0.7)
-    conversation = load_qa_chain(OpenAI(), chain_type="stuff")
-    embeddings = OpenAIEmbeddings()
-
-    vectorDB = await ingest_docs(filename)
-    docsData = vectorDB.similarity_search(message)
-    answer = conversation.run(input_documents=docsData, question=prompt)
-    return answer
-
-async def ingest_docs(filename = 'full.txt'):
-    raw_text = ""
-    with open(filename) as f:
-      raw_text = " ".join(line.strip() for line in f)  
-    return raw_text
-
-    raw_text = loader.load()
-
-    text_splitter = CharacterTextSplitter(
-        separator = " ",
-        chunk_size = 1000,
-        chunk_overlap  = 200,
-        length_function = len,
-    )
-
-    texts = text_splitter.split_text(raw_texts)
-    vectorDB = FAISS.from_texts(texts, embeddings)
-
-    return vectorDB

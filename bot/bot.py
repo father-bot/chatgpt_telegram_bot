@@ -289,7 +289,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             raise
 
         except Exception as e:
-            error_text = f"Something went wrong during completion. Reason: {e}"
+            tb_string = traceback.format_exc()
+            error_text = f"Something went wrong during completion. Reason: {e}, {tb_string}"
             logger.error(error_text)
             await update.message.reply_text(error_text)
             return

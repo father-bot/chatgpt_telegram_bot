@@ -1,9 +1,16 @@
 import config
-
-import tiktoken
+import os
+import json
 import openai
-openai.api_key = config.openai_api_key
+import tiktoken
+import faiss
+from langchain.chains.question_answering import load_qa_chain
+from langchain.llms import OpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import FAISS
 
+openai.api_key = config.openai_api_key
 
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
@@ -29,14 +36,17 @@ class ChatGPT:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                    r = await openai.ChatCompletion.acreate(
-                        model=self.model,
-                        messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
-                    )
-                    answer = r.choices[0].message["content"]
+                    r = await create_chain(messages, message)
+                    print(r)
+                    # r = await openai.ChatCompletion.acreate(
+                    #     model=self.model,
+                    #     messages=messages,
+                    #     **OPENAI_COMPLETION_OPTIONS
+                    # )
+                    answer = r
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
+                    # ADD HERE LANGCHAIN
                     r = await openai.Completion.acreate(
                         engine=self.model,
                         prompt=prompt,
@@ -69,6 +79,8 @@ class ChatGPT:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    # ADD HERE LANGCHAIN
+
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -86,6 +98,7 @@ class ChatGPT:
                             yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
+                    # ADD HERE LANGCHAIN
                     r_gen = await openai.Completion.acreate(
                         engine=self.model,
                         prompt=prompt,
@@ -194,3 +207,34 @@ async def generate_images(prompt, n_images=4):
 async def is_content_acceptable(prompt):
     r = await openai.Moderation.acreate(input=prompt)
     return not all(r.results[0].categories.values())
+
+async def create_chain(prompt, message, filename = 'full.txt'):
+    # Initialize OpenAI language model, conversation chain and embeddings
+    llm = OpenAI(temperature=0.7)
+    conversation = load_qa_chain(OpenAI(), chain_type="stuff")
+    embeddings = OpenAIEmbeddings()
+
+    vectorDB = await ingest_docs(filename)
+    docsData = vectorDB.similarity_search(message)
+    answer = conversation.run(input_documents=docsData, question=prompt)
+    return answer
+
+async def ingest_docs(filename = 'full.txt'):
+    raw_text = ""
+    with open(filename) as f:
+      raw_text = " ".join(line.strip() for line in f)  
+    return raw_text
+
+    raw_text = loader.load()
+
+    text_splitter = CharacterTextSplitter(
+        separator = " ",
+        chunk_size = 1000,
+        chunk_overlap  = 200,
+        length_function = len,
+    )
+
+    texts = text_splitter.split_text(raw_texts)
+    vectorDB = FAISS.from_texts(texts, embeddings)
+
+    return vectorDB

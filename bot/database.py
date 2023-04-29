@@ -49,6 +49,7 @@ class Database:
 
             "n_used_tokens": {},
 
+            "n_generated_images": 0,
             "n_transcribed_seconds": 0.0  # voice message transcription
         }
 

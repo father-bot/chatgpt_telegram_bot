@@ -13,7 +13,14 @@ RUN apt-get update
 RUN apt-get install -y python3 python3-pip python-dev build-essential python3-venv ffmpeg git
 
 # Copy SSH key for git private repos
-RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
+# Create .ssh directory
+RUN mkdir -p /root/.ssh
+RUN chmod 700 /root/.ssh
+
+# Disable strict host key checking
+RUN echo "Host *\n\tStrictHostKeyChecking no\n" > /root/.ssh/config
+RUN chmod 600 /root/.ssh/config
+
 
 RUN mkdir -p /code
 ADD . /code

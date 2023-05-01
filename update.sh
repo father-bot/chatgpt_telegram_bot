@@ -1,4 +1,4 @@
-docker rm -f $(docker ps -q)
+./stop.sh
 
 git reset --hard HEAD
 
@@ -8,4 +8,4 @@ chmod +x start.sh
 chmod +x stop.sh
 chmod +x update.sh
 
-docker-compose --env-file config/config.env up --build --detach
+./start.sh

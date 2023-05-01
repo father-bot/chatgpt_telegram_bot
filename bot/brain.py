@@ -37,7 +37,7 @@ def search_vault(query_str: str, max_content_size: int = 1000, max_results: int 
 
     print(vault_path)
 
-    repo_url = "https://github.com/santiagomalter/vault.git"
+    repo_url = "git@github.com:santiagomalter/vault.git"
     clone_or_pull_repo(repo_url, vault_path)
 
     

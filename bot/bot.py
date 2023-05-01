@@ -34,6 +34,8 @@ import config
 import database
 import openai_utils
 
+# Custom modules
+from brain import search_vault
 
 # setup
 db = database.Database()
@@ -49,6 +51,7 @@ HELP_MESSAGE = """Commands:
 ⚪ /settings – Show settings
 ⚪ /balance – Show balance
 ⚪ /help – Show help
+⚪ /brain – Load from the brain
 
 🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
 👥 Add bot to <b>group chat</b>: /help_group_chat
@@ -111,6 +114,8 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
     if db.get_user_attribute(user.id, "n_generated_images") is None:
         db.set_user_attribute(user.id, "n_generated_images", 0)
 
+def store_brain_results(user_id, results):
+    db.set_user_attribute(user_id, "brain_results", results)
 
 async def is_bot_mentioned(update: Update, context: CallbackContext):
      try:
@@ -206,6 +211,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if chat_mode == "artist":
         await generate_image_handle(update, context, message=message)
         return
+    
+
+    # START BRAIN
+    # Retrieve brain search results from user context
+    brain_results = db.get_user_attribute(user_id, "brain_results")
+    store_brain_results(user_id, None)
+    # END BRAIN
 
     async def message_handle_fn():
         # new dialog timeout
@@ -231,6 +243,15 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                  return
 
             dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
+
+            # Add a custom message and brain results to the dialog_messages
+            if brain_results:
+                #custom_message = "Here are some search results from your personal knowledge base:"
+                dialog_messages.extend([
+                    #{"user": "Custom Message", "bot": custom_message, "date": datetime.now()},
+                    {"user": "Brain Results", "bot": brain_results, "date": datetime.now()}
+                ])
+
             parse_mode = {
                 "html": ParseMode.HTML,
                 "markdown": ParseMode.MARKDOWN
@@ -405,6 +426,9 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    # Clear brain results
+    store_brain_results(user_id, None)
 
     db.start_new_dialog(user_id)
     await update.message.reply_text("Starting new dialog ✅")
@@ -649,6 +673,25 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
     except:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
+async def load_brain_handle(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    query = " ".join(context.args)
+
+    if not query:
+        await update.message.reply_text("Please provide a search query after /brain, e.g. /brain acme")
+        return
+
+    try:
+        search_results = search_vault(query)
+        if search_results:
+            store_brain_results(user_id, search_results)
+            await update.message.reply_text(f"Loaded brain search results for '{query}'. Continue the conversation with the bot.")
+        else:
+            await update.message.reply_text(f"No search results found for '{query}'.")
+    except Exception as e:
+        logger.error("Error while searching the brain:", exc_info=e)
+        await update.message.reply_text("An error occurred while searching the brain. Please try again later.")
+
 async def post_init(application: Application):
     await application.bot.set_my_commands([
         BotCommand("/new", "Start new dialog"),
@@ -657,6 +700,7 @@ async def post_init(application: Application):
         BotCommand("/balance", "Show balance"),
         BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
+        BotCommand("/brain", "Load from brain"),
     ])
 
 def run_bot() -> None:
@@ -695,6 +739,9 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+
+    application.add_handler(CommandHandler("brain", load_brain_handle, filters=user_filter))
+
 
     application.add_error_handler(error_handle)
 

@@ -138,3 +138,6 @@ mongodb/
 .DS_Store
 config/config.disabled.env
 config/config.disabled.yml
+
+data/index
+data/vault

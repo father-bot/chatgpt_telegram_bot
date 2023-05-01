@@ -5,3 +5,8 @@ PyYAML==6.0
 pymongo==4.3.3
 python-dotenv==0.21.0
 pydub==0.25.1
+
+# Brain
+mistune==2.0.5
+Whoosh==2.7.4
+beautifulsoup4==4.12.2

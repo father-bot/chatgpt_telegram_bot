@@ -14,8 +14,6 @@ RUN apt-get install -y python3 python3-pip python-dev build-essential python3-ve
 
 # Copy SSH key for git private repos
 RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
-# Skip Host verification for git
-RUN echo "StrictHostKeyChecking no" > /root/.ssh/config
 
 RUN mkdir -p /code
 ADD . /code

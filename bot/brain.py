@@ -8,15 +8,39 @@ from whoosh import scoring
 from bs4 import BeautifulSoup
 import re
 from os.path import dirname, abspath
-
+import git
 
 def process_file_path(file_path: str) -> str:
     relevant_parts = file_path.split("/")[3:]  # Keep only the relevant parts of the path
     return " / ".join(relevant_parts)
 
+def clone_or_pull_repo(repo_url, local_path):
+    if not os.path.exists(local_path):
+        os.makedirs(local_path)
+
+    git_dir = os.path.join(local_path, ".git")
+    
+    if os.path.exists(git_dir):
+        # Pull the repository if it already exists
+        repo = git.Repo(local_path)
+        origin = repo.remotes.origin
+        origin.pull()
+    else:
+        # Clone the repository if it doesn't exist
+        repo = git.Repo.clone_from(repo_url, local_path)
+
+    return repo
+
 def search_vault(query_str: str, max_content_size: int = 1000, max_results: int = 5) -> str:
     # Step 1: Traverse Obsidian vault and read .md files
     vault_path = d = f"{dirname(dirname(abspath(__file__)))}/data/vault"
+
+    print(vault_path)
+
+    repo_url = "https://github.com/santiagomalter/vault.git"
+    clone_or_pull_repo(repo_url, vault_path)
+
+    
     full_vault_path = os.path.join(vault_path, "**/*.md")
     md_files = glob.glob(full_vault_path, recursive=True)
 

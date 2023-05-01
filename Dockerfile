@@ -12,6 +12,15 @@ ENV GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip python-dev build-essential python3-venv ffmpeg git
 
+# Copy SSH key for git private repos
+ADD .ssh/id_rsa /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
+# Use git with SSH instead of https
+RUN echo “[url \”git@github.com:\”]\n\tinsteadOf = https://github.com/" >> /root/.gitconfig
+# Skip Host verification for git
+RUN echo “StrictHostKeyChecking no “ > /root/.ssh/config
+
+
 RUN mkdir -p /code
 ADD . /code
 WORKDIR /code

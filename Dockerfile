@@ -13,7 +13,6 @@ RUN apt-get update
 RUN apt-get install -y python3 python3-pip python-dev build-essential python3-venv ffmpeg git
 
 # Copy SSH key for git private repos
-COPY .ssh/id_rsa /root/.ssh/id_rsa
 RUN chmod 600 /root/.ssh/id_rsa
 # Use git with SSH instead of https
 RUN git config --global url."git@github.com:".insteadOf "https://github.com/"

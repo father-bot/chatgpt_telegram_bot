@@ -685,7 +685,7 @@ async def load_brain_handle(update: Update, context: CallbackContext):
         search_results = search_vault(query)
         if search_results:
             store_brain_results(user_id, search_results)
-            await update.message.reply_text(f"Loaded brain search results for '{query}'. Continue the conversation with the bot.")
+            await update.message.reply_text(f"Loaded brain search results for '{query}' 🧠")
         else:
             await update.message.reply_text(f"No search results found for '{query}'.")
     except Exception as e:

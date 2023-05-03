@@ -35,7 +35,7 @@ import database
 import openai_utils
 
 # Custom modules
-from brain import search_vault
+from ..custom.vault_search import search_vault
 
 # setup
 db = database.Database()

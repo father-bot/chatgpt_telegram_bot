@@ -1,3 +1,5 @@
+# vault_search.py
+
 import os
 import glob
 import mistune
@@ -8,46 +10,19 @@ from whoosh import scoring
 from bs4 import BeautifulSoup
 import re
 from os.path import dirname, abspath
-import git
 
 def process_file_path(file_path: str) -> str:
     relevant_parts = file_path.split("/")[3:]  # Keep only the relevant parts of the path
     return " / ".join(relevant_parts)
 
-def clone_or_pull_repo(repo_url, local_path):
-    if not os.path.exists(local_path):
-        os.makedirs(local_path)
-
-    git_dir = os.path.join(local_path, ".git")
-    
-    if os.path.exists(git_dir):
-        # Pull the repository if it already exists
-        repo = git.Repo(local_path)
-        origin = repo.remotes.origin
-        origin.pull()
-    else:
-        # Clone the repository if it doesn't exist
-        repo = git.Repo.clone_from(repo_url, local_path)
-
-    return repo
-
-def search_vault(query_str: str, max_content_size: int = 1000, max_results: int = 5) -> str:
+def search_vault(vault_instance, query_str: str, max_content_size: int = 1000, max_results: int = 5) -> str:
     # Step 1: Traverse Obsidian vault and read .md files
-    vault_path = d = f"{dirname(dirname(abspath(__file__)))}/data/vault"
-
-    print(vault_path)
-
-    repo_url = "git@github.com:santiagomalter/vault.git"
-    clone_or_pull_repo(repo_url, vault_path)
-
-    
+    vault_path = vault_instance.local_path
     full_vault_path = os.path.join(vault_path, "**/*.md")
     md_files = glob.glob(full_vault_path, recursive=True)
 
-    print(query_str, vault_path, full_vault_path, md_files)
-
     # Create the index directory if it does not exist
-    index_directory = vault_path = d = f"{dirname(dirname(abspath(__file__)))}/data/index"
+    index_directory = os.path.join(dirname(dirname(abspath(__file__))), "data", "index")
     if not os.path.exists(index_directory):
         os.makedirs(index_directory)
 
@@ -112,7 +87,6 @@ def search_vault(query_str: str, max_content_size: int = 1000, max_results: int 
 
     query = QueryParser("content", index.schema).parse(query_str)
     results = searcher.search(query, limit=max_results)
-
     responses = []
 
     for hit in results:
@@ -128,7 +102,7 @@ def custom_score(searcher, fieldnum, textreader, docnum, weight):
     # Extract folder number from the file path
     filepath = searcher.stored_fields(docnum)["filepath"]
     folder_number = int(filepath.split(" / ")[0][0])
-
     # Calculate the custom score
     score = weight * (1 / (1 + folder_number))
     return score
+

@@ -4,6 +4,7 @@ import requests
 import json
 import os
 import logging
+from datetime import datetime
 
 def init(api_key, space_id, output_directory):
     global headers
@@ -29,8 +30,13 @@ def fetch_items(url, page):
     return response.json()
 
 
-def fetch_lists(space_id, page):
-    return fetch_items(f'https://api.clickup.com/api/v2/space/{space_id}/list', page)
+def fetch_lists(space_id, page, folder_id=None):
+    if folder_id:
+        url = f'https://api.clickup.com/api/v2/folder/{folder_id}/list'
+    else:
+        url = f'https://api.clickup.com/api/v2/space/{space_id}/list'
+
+    return fetch_items(url, page)
 
 def fetch_tasks(list_id, page):
     return fetch_items(f'https://api.clickup.com/api/v2/list/{list_id}/task', page)
@@ -46,63 +52,71 @@ def fetch_subtasks(task_id, page):
         return None
     return response.json()
 
-def process_tasks(tasks, md_file, indent=''):
+def fetch_folders(space_id, page):
+    url = f'https://api.clickup.com/api/v2/space/{space_id}/folder'
+    return fetch_items(url, page)
+
+def process_tasks(tasks, md_file, indent='', folder_name='', list_name=''):
     for task in tasks:
         task_name = task['name']
         task_id = task['id']
         task_status = task['status']['status']
         task_description = task.get('text_content', '')
-        task_metadata = json.dumps(task, indent=2)
         task_completed = 'x' if task['status']['type'] == 'closed' else ' '
+        task_creation_date = task['date_created']
+        task_owner = task['creator']['username']
 
+        # Convert the creation date to a human-readable format
+        creation_date = datetime.fromtimestamp(int(task_creation_date) / 1000)
+        human_readable_date = creation_date.strftime('%Y-%m-%d %H:%M:%S')
+
+        folder_tag = folder_name.lower().replace(' ', '-')
+        list_tag = list_name.lower().replace(' ', '-')
+        
         md_file.write(f'{indent}- [{task_completed}] **{task_name}** (Task ID: {task_id})\n')
-        md_file.write(f'{indent}  ## Status: {task_status}\n')
-        md_file.write(f'{indent}  ### Description:\n')
-        md_file.write(f'{indent}  {task_description}\n')
-        md_file.write(f'{indent}  ### Metadata:\n```\n{task_metadata}\n```\n\n')
-
-        # # Process subtasks
-        # subtask_page = 0
-        # while True:
-        #     subtasks_data = fetch_subtasks(task_id, subtask_page)
-
-        #     if subtasks_data is None or not subtasks_data['subtasks']:
-        #         break
-
-        #     md_file.write(f'{indent}  ### Subtasks:\n')
-        #     process_tasks(subtasks_data['subtasks'], md_file, indent='    ')
-
-        #     subtask_page += 1
-
+        md_file.write(f'{indent}  Status: {task_status}\n')
+        md_file.write(f'{indent}  Created: {human_readable_date}\n')
+        md_file.write(f'{indent}  Owner: {task_owner}\n')
+        md_file.write(f'{indent}  Description:\n')
+        md_file.write(f'{indent}  {task_description}\n\n')
+        md_file.write(f'{indent}  Tags: #{folder_tag} #{list_tag}\n\n')
 
 def export_markdown():
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_directory_global):
         os.makedirs(output_directory_global)
 
-    # Iterate through lists with pagination and create a markdown file for each list
-    list_page = 0
-    while True:
-        lists_data = fetch_lists(space_id_global, list_page)
+    # Fetch folders
+    folders_data = fetch_folders(space_id_global, 0)
+    folders = folders_data.get('folders', [])
 
-        # Check if 'lists' key is not in lists_data or if it's empty
-        if 'lists' not in lists_data or not lists_data['lists']:
-            break
+    # Add a dummy "No Folder" item to include folderless lists
+    folders.append({'id': None, 'name': 'No Folder'})
 
-        for lst in lists_data['lists']:
+    for folder in folders:
+        folder_id = folder['id']
+        folder_name = folder['name']
+        folder_path = os.path.join(output_directory_global, folder_name)
+
+        # Create the folder directory if it doesn't exist
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        # Fetch lists for the current folder (or folderless lists if folder_id is None)
+        lists_data = fetch_lists(space_id_global, 0, folder_id)
+        lists = lists_data.get('lists', [])
+
+        for lst in lists:
             list_id = lst['id']
             list_name = lst['name']
-            folder_name = lst['folder']['name'] if lst['folder'] else 'No Folder'
-            folder_path = os.path.join(output_directory_global, folder_name)
-
-            # Create the folder directory if it doesn't exist
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-
             md_file_path = os.path.join(folder_path, f'{list_name}.md')
             logging.info(f'Processing list: {list_name}')
 
             with open(md_file_path, 'w', encoding='utf-8') as md_file:
+                # Add folder and list titles to the markdown file
+                md_file.write(f'# {folder_name}\n\n')
+                md_file.write(f'## {list_name}\n\n')
+
                 # Process tasks for the current list
                 task_page = 0
                 while True:
@@ -110,9 +124,6 @@ def export_markdown():
                     if not tasks_data['tasks']:
                         break
 
-                    process_tasks(tasks_data['tasks'], md_file)
+                    process_tasks(tasks_data['tasks'], md_file, folder_name=folder_name, list_name=list_name)
 
                     task_page += 1
-
-            # Increment the list_page variable to fetch the next page of lists
-            list_page += 1

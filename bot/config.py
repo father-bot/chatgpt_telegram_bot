@@ -32,3 +32,6 @@ with open(config_dir / "models.yml", 'r') as f:
 
 # files
 help_group_chat_video_path = Path(__file__).parent.parent.resolve() / "static" / "help_group_chat.mp4"
+
+# Custom
+clickup_api_key = config_yaml["clickup_api_key"]

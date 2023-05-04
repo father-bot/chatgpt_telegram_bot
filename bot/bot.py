@@ -476,9 +476,9 @@ async def post_init(application: Application):
         BotCommand("/stop", "Stop the dialog"),
         BotCommand("/mode", "Select chat mode"),
         BotCommand("/retry", "Re-generate response for previous query"),
-        BotCommand("/balance", "Show balance"),
-        BotCommand("/settings", "Show settings"),
-        BotCommand("/help", "Show help message"),
+        # BotCommand("/balance", "Show balance"),
+        # BotCommand("/settings", "Show settings"),
+        # BotCommand("/help", "Show help message"),
     ])
 
 def run_bot() -> None:

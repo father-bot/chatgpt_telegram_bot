@@ -45,9 +45,6 @@ HELP_MESSAGE = """Commands:
 ⚪ /stop – Stop the dialog
 ⚪ /retry – Regenerate last bot answer
 ⚪ /mode – Select chat mode
-⚪ /settings – Show settings
-⚪ /balance – Show balance
-⚪ /help – Show help
 """
 
 
@@ -476,9 +473,6 @@ async def post_init(application: Application):
         BotCommand("/stop", "Stop the dialog"),
         BotCommand("/mode", "Select chat mode"),
         BotCommand("/retry", "Re-generate response for previous query"),
-        # BotCommand("/balance", "Show balance"),
-        # BotCommand("/settings", "Show settings"),
-        # BotCommand("/help", "Show help message"),
     ])
 
 def run_bot() -> None:
@@ -497,7 +491,6 @@ def run_bot() -> None:
         user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
         user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
 
-    application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
     application.add_handler(CommandHandler("stop", stop_dialog_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
 
@@ -507,9 +500,6 @@ def run_bot() -> None:
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
-    application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
-    application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
-    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
     application.add_error_handler(error_handle)
     
     # start the bot

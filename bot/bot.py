@@ -637,12 +637,11 @@ def run_bot() -> None:
     )
 
     # add handlers
-    print(len(config.USER_WHITELISTS))
 
-    if config.USER_WHITELISTS:
+    if config.user_whitelist:
         usernames = []
         user_ids = []
-        for user in config.USER_WHITELISTS.split(','):
+        for user in config.user_whitelist.split(','):
             user = user.strip()
             if user.isnumeric():
                 user_ids.append(int(user))

@@ -421,16 +421,19 @@ async def cancel_handle(update: Update, context: CallbackContext):
 
 async def get_menu(update: Update, user_id: int, menu_type: str):
     menu_type_dict = getattr(config, menu_type)
-    if menu_type == "model":
-        modelos_disponibles = config.api["info"][db.get_user_attribute(user_id, "current_api")]["available_model"]
-        if db.get_user_attribute(user_id, 'current_model') not in modelos_disponibles:
-            api_actual = db.get_user_attribute(user_id, 'current_api')
-            db.set_user_attribute(user_id, "current_model", modelos_disponibles[0])
-            await send_reply(update, f'Tu modelo actual no es compatible con la API "{config.api["info"][api_actual]["name"]}", por lo que se ha cambiado el modelo automáticamente a "{config.model["info"][db.get_user_attribute(user_id, "current_model")]["name"]}".')
-            pass
-        item_keys = config.api["info"][db.get_user_attribute(user_id, "current_api")]["available_model"]
-    else:
-        item_keys = menu_type_dict[f"available_{menu_type}"]
+    apis_disponibles = config.api["available_api"]
+    api_antigua = db.get_user_attribute(user_id, 'current_api')
+    if api_antigua not in apis_disponibles:
+        db.set_user_attribute(user_id, "current_api", apis_disponibles[0])
+        await send_reply(update, f'Tu API actual "{api_antigua}" no está disponible. Por lo que se ha cambiado automáticamente a "{menu_type_dict["info"][db.get_user_attribute(user_id, "current_api")]["name"]}".')
+        pass
+    modelos_disponibles = config.api["info"][db.get_user_attribute(user_id, "current_api")]["available_model"]
+    if db.get_user_attribute(user_id, 'current_model') not in modelos_disponibles:
+        db.set_user_attribute(user_id, "current_model", modelos_disponibles[0])
+        await send_reply(update, f'Tu modelo actual no es compatible con la API actual, por lo que se ha cambiado el modelo automáticamente a "{config.model["info"][db.get_user_attribute(user_id, "current_model")]["name"]}".')
+        pass
+
+    item_keys = menu_type_dict[f"available_{menu_type}"]
         
     current_key = db.get_user_attribute(user_id, f"current_{menu_type}")
     

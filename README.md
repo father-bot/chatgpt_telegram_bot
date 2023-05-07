@@ -23,7 +23,7 @@
 - **Añade la cantidad de APIs y modelos que quieras!**
 - Un menú genérico para los 3 tipos de opciones
 - Simplificación de ciertas partes del código
-- Se añadió un comando /reboot para reiniciar el sistema Docker, los permisos del usuario se declaran en docker-compose.yml en la variable 
+- Se añadió un comando /reboot para reiniciar el sistema Docker, los permisos del usuario se declaran en docker-compose.yml en la variable sudo_users
 - Cambio de API por usuario!
 - El generador de imágenes envía las imágenes comprimidas y en formato sin comprimir (archivo) 
 
@@ -43,7 +43,7 @@
 - /retry - Regenera la última respuesta del bot.
 - /new - Iniciar nuevo diálogo.
 - /chat_mode - Seleccionar el modo de conversación.
-- /model - Mostrar configuración.
+- /model - Mostrar modelos IA.
 - /api - Mostrar APIs.
 - /help – Mostrar este mensaje de nuevo.
 

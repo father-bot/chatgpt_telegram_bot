@@ -1,4 +1,3 @@
-import os
 import subprocess
 import logging
 import asyncio
@@ -14,7 +13,6 @@ import openai
 import telegram
 from telegram import (
     Update,
-    User,
     InputMediaDocument,
     InputMediaPhoto,
     InlineKeyboardButton,
@@ -35,7 +33,6 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
-import time
 # setup
 
 db = database.Database()

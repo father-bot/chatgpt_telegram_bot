@@ -1,13 +1,8 @@
 import config
-import json
 import openai
-import aiohttp
-from aiohttp import FormData
 import database
 
 db = database.Database()
-
-n_images = config.n_images
 
 OPENAI_COMPLETION_OPTIONS = {
     "max_tokens": 2048,
@@ -104,7 +99,7 @@ async def generate_images(prompt, user_id):
     api_info = config.api["info"].get(api, {})
     openai.api_key = str(api_info.get("key", ""))
     openai.api_base=str(config.api["info"][api].get("url"))
-    r = await openai.Image.acreate(prompt=prompt, n=n_images, size="1024x1024")
+    r = await openai.Image.acreate(prompt=prompt, n=config.n_images, size="1024x1024")
     image_urls = [item.url for item in r.data]
     return image_urls
 

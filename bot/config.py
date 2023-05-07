@@ -9,7 +9,7 @@ sudo_user_id = (lambda s: s.split(',') if s else [])(os.environ.get('SUDO_USER_I
 allowed_telegram_usernames = (lambda s: s.split(',') if s else [])(os.environ.get('ALLOWED_TELEGRAM_USERNAMES', ''))
 new_dialog_timeout = int(os.environ["new_dialog_timeout"])
 n_images = int(os.environ["return_n_generated_images"])
-mongodb_uri = f"mongodb+srv://{os.environ['MONGODB_USERNAME']}:{os.environ['MONGODB_PASSWORD']}@{os.environ['MONGODB_HOST']}/?retryWrites=true&w=majority"
+mongodb_uri = f"mongodb://{os.environ['MONGODB_USERNAME']}:{os.environ['MONGODB_PASSWORD']}@{os.environ['MONGODB_HOST']}/?retryWrites=true&w=majority"
 
 # apis
 with open(config_dir / "api.yml", 'r') as f:

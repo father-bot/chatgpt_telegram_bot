@@ -54,7 +54,7 @@
 
 3. Edita `config/api.example.yml` para configurar tu OpenAI-API-KEY o añadir apis personalizadas
 
-4. Añade tu token de telegram, modifica otras variables en 'docker-compose.example.yml' y renombra `docker-compose.example.yml` a `docker-compose.yml`
+4. Añade tu token de telegram, base de datos Mongo, modifica otras variables en 'docker-compose.example.yml' y renombra `docker-compose.example.yml` a `docker-compose.yml`
 
 5. 🔥 Y ahora **ejecuta**:
     ```bash

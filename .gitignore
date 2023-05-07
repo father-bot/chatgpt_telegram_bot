@@ -129,9 +129,13 @@ dmypy.json
 .pyre/
 
 # Custom
-config/config.yml
-config/config.env
+config/api.yml
+config/chat_mode.yml
+config/model.yml
 
 docker-compose.dev.yml
+
+docker-compose.yml
+
 
 mongodb/

@@ -1,17 +1,13 @@
 from typing import Optional, Any
-
 import pymongo
 import uuid
 from datetime import datetime
-
 import config
-
 
 class Database:
     def __init__(self):
         self.client = pymongo.MongoClient(config.mongodb_uri)
-        self.db = self.client["chatgpt_telegram_bot"]
-
+        self.db = self.client["chatgpt"]
         self.user_collection = self.db["user"]
         self.dialog_collection = self.db["dialog"]
 
@@ -20,7 +16,7 @@ class Database:
             return True
         else:
             if raise_exception:
-                raise ValueError(f"User {user_id} does not exist")
+                raise ValueError(f"Usuario {user_id} no existe")
             else:
                 return False
 
@@ -44,13 +40,10 @@ class Database:
             "first_seen": datetime.now(),
 
             "current_dialog_id": None,
-            "current_chat_mode": "assistant",
-            "current_model": config.models["available_text_models"][0],
+            "current_chat_mode": config.chat_mode["available_chat_mode"][1],
+            "current_model": config.model["available_model"][0],
+            "current_api": config.api["available_api"][0],
 
-            "n_used_tokens": {},
-
-            "n_generated_images": 0,
-            "n_transcribed_seconds": 0.0  # voice message transcription
         }
 
         if not self.check_if_user_exists(user_id):
@@ -66,6 +59,7 @@ class Database:
             "chat_mode": self.get_user_attribute(user_id, "current_chat_mode"),
             "start_time": datetime.now(),
             "model": self.get_user_attribute(user_id, "current_model"),
+            "api": self.get_user_attribute(user_id, "current_api"),
             "messages": []
         }
 
@@ -88,24 +82,24 @@ class Database:
             return None
 
         return user_dict[key]
+    
+    def reset_user_attribute(self, user_id: int):
+        self.check_if_user_exists(user_id, raise_exception=True)
 
+        # Obtener los valores iniciales para cada atributo
+        initial_chat_mode = config.chat_mode["available_chat_mode"][1]
+        initial_model = config.model["available_model"][0]
+        initial_api = config.api["available_api"][0]
+
+        # Actualizar los valores en la base de datos
+        self.set_user_attribute(user_id, 'current_chat_mode', initial_chat_mode)
+        self.set_user_attribute(user_id, 'current_model', initial_model)
+        self.set_user_attribute(user_id, 'current_api', initial_api)
+
+        
     def set_user_attribute(self, user_id: int, key: str, value: Any):
         self.check_if_user_exists(user_id, raise_exception=True)
         self.user_collection.update_one({"_id": user_id}, {"$set": {key: value}})
-
-    def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
-        n_used_tokens_dict = self.get_user_attribute(user_id, "n_used_tokens")
-
-        if model in n_used_tokens_dict:
-            n_used_tokens_dict[model]["n_input_tokens"] += n_input_tokens
-            n_used_tokens_dict[model]["n_output_tokens"] += n_output_tokens
-        else:
-            n_used_tokens_dict[model] = {
-                "n_input_tokens": n_input_tokens,
-                "n_output_tokens": n_output_tokens
-            }
-
-        self.set_user_attribute(user_id, "n_used_tokens", n_used_tokens_dict)
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)

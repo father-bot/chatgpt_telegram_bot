@@ -1,0 +1,20 @@
+available_model: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
+# debes declarar los modelos en el apartado de acá arriba
+info:
+  gpt-3.5-turbo:
+    name: ChatGPT
+    description: es ese modelo bien conocido. Es <b>rápido</b> y <b>barato</b>. Ideal para tareas diarias.
+
+  gpt-4:
+    name: GPT-4
+    description: es el modelo más <b>inteligente</b> y avanzado del mundo. Pero es más lento y no tan eficiente en costos como ChatGPT. La mejor opción para tareas intelectuales <b>complejas</b>.
+
+  text-davinci-003:
+    name: GPT-3
+    description: es un modelo obsoleto. De hecho, <b>no hay razón para usarlo</b>, ya que es más caro y más lento que ChatGPT, pero alrededor del mismo nivel de inteligencia.
+
+  dalle-2:
+    type: image
+
+  whisper:
+    type: audio

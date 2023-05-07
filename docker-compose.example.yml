@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  chatgpt-for-telegram:
+    container_name: chatgpt-for-telegram
+    command: python3 bot/bot.py
+    restart: always
+    build:
+      context: "."
+      dockerfile: Dockerfile
+    environment:
+      - MONGODB_HOST=database.mongodb.net
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=admin
+      - TELEGRAM_TOKEN=yourbottoken
+      - ALLOWED_TELEGRAM_USERNAMES=6969, 420
+      - SUDO_USER_ID=69959
+      - new_dialog_timeout=7200
+      - return_n_generated_images=4
+#opcionalmente    volumes:
+#      - /ruta-fuera-del-docker/mi-configuracion:/config

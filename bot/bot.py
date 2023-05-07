@@ -43,16 +43,13 @@ user_semaphores = {}
 user_tasks = {}
 
 HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
-⚪ /mode – Select chat mode
-⚪ /settings – Show settings
-⚪ /balance – Show balance
-⚪ /help – Show help
+⚪ /retry – Ulangi jawaban sebelumnya
+⚪ /new – Mulai percakapan baru
+⚪ /mode – Pilih mode
 
-🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
-👥 Add bot to <b>group chat</b>: /help_group_chat
-🎤 You can send <b>Voice Messages</b> instead of text
+🎨 Untuk membuat gambar pilih mode <b>👩‍🎨 Artist</b> /mode
+👥 Tambahkan ke <b>group chat</b>: /help_group_chat
+🎤 Kamu bisa mengirim pesan suara dan text sekaligus.
 """
 
 HELP_GROUP_CHAT_MESSAGE = """You can add bot to any <b>group chat</b> to help and entertain its participants!
@@ -172,7 +169,7 @@ async def retry_handle(update: Update, context: CallbackContext):
 
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
     if len(dialog_messages) == 0:
-        await update.message.reply_text("No message to retry 🤷‍♂️")
+        await update.message.reply_text("Tidak ada percakapan sebelumnya 🤷‍♂️")
         return
 
     last_dialog_message = dialog_messages.pop()
@@ -212,7 +209,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
-                await update.message.reply_text(f"Starting new dialog due to timeout (<b>{config.chat_modes[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
+                await update.message.reply_text(f"Mulai percakapan terbaru karena sesi telah berakhir (<b>{config.chat_modes[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
         # in case of CancelledError
@@ -227,7 +224,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.chat.send_action(action="typing")
 
             if _message is None or len(_message) == 0:
-                 await update.message.reply_text("🥲 You sent <b>empty message</b>. Please, try again!", parse_mode=ParseMode.HTML)
+                 await update.message.reply_text("🥲 Anda mengirim pesan kosong, silahkan mengulangi sekali lagi.", parse_mode=ParseMode.HTML)
                  return
 
             dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
@@ -407,7 +404,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     db.start_new_dialog(user_id)
-    await update.message.reply_text("Starting new dialog ✅")
+    await update.message.reply_text("mulai percakapan baru ✅")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     await update.message.reply_text(f"{config.chat_modes[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
@@ -423,12 +420,12 @@ async def cancel_handle(update: Update, context: CallbackContext):
         task = user_tasks[user_id]
         task.cancel()
     else:
-        await update.message.reply_text("<i>Nothing to cancel...</i>", parse_mode=ParseMode.HTML)
+        await update.message.reply_text("<i>tidak ada percapakan sebelumnya...</i>", parse_mode=ParseMode.HTML)
 
 
 def get_chat_mode_menu(page_index: int):
     n_chat_modes_per_page = config.n_chat_modes_per_page
-    text = f"Select <b>chat mode</b> ({len(config.chat_modes)} modes available):"
+    text = f"Pilih <b>mode</b> ({len(config.chat_modes)} mode tersedia):"
 
     # buttons
     chat_mode_keys = list(config.chat_modes.keys())
@@ -651,12 +648,10 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
 
 async def post_init(application: Application):
     await application.bot.set_my_commands([
-        BotCommand("/new", "Start new dialog"),
-        BotCommand("/mode", "Select chat mode"),
-        BotCommand("/retry", "Re-generate response for previous query"),
-        BotCommand("/balance", "Show balance"),
-        BotCommand("/settings", "Show settings"),
-        BotCommand("/help", "Show help message"),
+        BotCommand("/new", "Mulai percakapan baru"),
+        BotCommand("/mode", "Pilih mode"),
+        BotCommand("/retry", "Ulangi jawaban sebelumnya"),
+        BotCommand("/help", "Bantuan"),
     ])
 
 def run_bot() -> None:
@@ -690,11 +685,6 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(show_chat_modes_callback_handle, pattern="^show_chat_modes"))
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
-
-    application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
-    application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
-
-    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
     application.add_error_handler(error_handle)
 

@@ -5,8 +5,8 @@ from pathlib import Path
 config_dir = Path(__file__).parent.parent.resolve() / "config"
 
 telegram_token = os.environ["TELEGRAM_TOKEN"]
-sudo_user_id = (lambda s: s.split(',') if s else [])(os.environ.get('SUDO_USER_ID', ''))
-allowed_telegram_usernames = (lambda s: s.split(',') if s else [])(os.environ.get('ALLOWED_TELEGRAM_USERNAMES', ''))
+sudo_users = os.environ.get('SUDO_USERS', '')
+user_whitelist = os.environ.get('USER_WHITELIST', '')
 new_dialog_timeout = int(os.environ["new_dialog_timeout"])
 n_images = int(os.environ["return_n_generated_images"])
 mongodb_uri = f"mongodb://{os.environ['MONGODB_USERNAME']}:{os.environ['MONGODB_PASSWORD']}@{os.environ['MONGODB_HOST']}/?retryWrites=true&w=majority"

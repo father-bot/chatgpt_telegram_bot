@@ -66,11 +66,19 @@ To get a reply from the bot in the chat – @ <b>tag</b> it or <b>reply</b> to i
 Por ejemplo: "{bot_username} escribe un poema sobre Telegram"
 """
 async def reboot(update, context):
-    if str(update.message.from_user.id) in config.sudo_user_id:
+    sudo_user_list = []
+    for user in config.sudo_users.split(','):
+        user = user.strip()
+        if user.isnumeric():
+            sudo_user_list.append(int(user))
+        else:
+            sudo_user_list.append(user)
+
+    user = update.message.from_user
+    if user.id in sudo_user_list or user.username in sudo_user_list:
+        print(sudo_user_list)
         await update.message.reply_text("Reiniciando...")
         subprocess.Popen(['reboot'])
-    else:
-        await update.message.reply_text("No permitido...")
 
 def split_text_into_chunks(text, chunk_size):
     for i in range(0, len(text), chunk_size):
@@ -629,13 +637,20 @@ def run_bot() -> None:
     )
 
     # add handlers
-    user_filter = filters.ALL
-    if len(config.allowed_telegram_usernames) > 0:
-        usernames = [x for x in config.allowed_telegram_usernames if isinstance(x, str)]
-        user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
-        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+    print(len(config.USER_WHITELISTS))
 
-
+    if config.USER_WHITELISTS:
+        usernames = []
+        user_ids = []
+        for user in config.USER_WHITELISTS.split(','):
+            user = user.strip()
+            if user.isnumeric():
+                user_ids.append(int(user))
+            else:
+                usernames.append(user)
+            user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+    else:
+        user_filter = filters.ALL
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))

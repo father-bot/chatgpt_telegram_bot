@@ -13,8 +13,8 @@ services:
       - MONGODB_USERNAME=admin
       - MONGODB_PASSWORD=admin
       - TELEGRAM_TOKEN=yourbottoken
-      - ALLOWED_TELEGRAM_USERNAMES=6969, 420
-      - SUDO_USER_ID=69959
+      - USER_WHITELIST = 89727e9, mamador,   rrjrj,6077244180
+      - SUDO_USERS=69959, ejemplo1,ejemplo2
       - new_dialog_timeout=7200
       - return_n_generated_images=4
 #opcionalmente    volumes:

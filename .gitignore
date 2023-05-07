@@ -132,7 +132,7 @@ dmypy.json
 config/api.yml
 config/chat_mode.yml
 config/model.yml
-
+bot/config_dev.py
 docker-compose.dev.yml
 
 docker-compose.yml

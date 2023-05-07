@@ -1,5 +1,5 @@
 ## Origin repo:
-<a href="https://github.com/karfly/chatgpt_telegram_bot" alt="Karfly/chatgpt_telegram_bot"></a>
+<a href="https://github.com/karfly/chatgpt_telegram_bot" alt="Karfly/chatgpt_telegram_bot">Karfly/chatgpt_telegram_bot</a>
 
 # Este fork es personal, pero estoy tan orgulloso de esto que lo quiero compartir.
 

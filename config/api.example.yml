@@ -1,4 +1,4 @@
-available_api: ["openai"]
+available_api: ["openai", "you", "chatbase"]
 available_imagen: ["openai"]
 # debes declarar los api en el apartado de acá arriba
 info:
@@ -9,6 +9,19 @@ info:
     key: sk-69420
     available_model: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
 
+  you:
+    name: You
+    description: de You.com.
+    url: youchat
+    key: youkey
+    available_model: ["gpt-3.5-turbo"]
+
+  chatbase:
+    name: ChatBase
+    description: de ChatBase.co.
+    url: youchat
+    key: youkey
+    available_model: ["gpt-3.5-turbo", "gpt-4"]
   # otra_api:
   #   name: Otra
   #   description: Test.

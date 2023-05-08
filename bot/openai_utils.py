@@ -1,6 +1,9 @@
 import config
 import openai
 import database
+from apis.gpt4free import you
+from apis.opengpt import chatbase
+
 
 db = database.Database()
 
@@ -26,32 +29,61 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if (self.model in config.model["available_model"]):
-                    if self.model != "text-davinci-003":
-                        messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                        OPENAI_COMPLETION_OPTIONS["messages"] = messages
-                        OPENAI_COMPLETION_OPTIONS["model"] = self.model
+                messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                if api == "chatbase":
+                    r = chatbase.GetAnswer(messages=messages, model=self.model)
+                elif api == "you":
+                    print("envió a you")
+                    r = you.Completion.create(
+                        prompt=messages,
+                        chat=dialog_messages,
+                        detailed=False,
+                        include_links=True, )
+                    r = dict(r)
+                elif api == "chatbase":
+                    answer = r
+                    #if porque los mamaverga filtran la ip en el mensaje
+                    if "API rate limit exceeded" in answer:
+                        answer = "Se alcanzó el límite de API. Inténtalo luego!"
+                    yield "not_finished", answer
+                else:
+                    if (self.model in config.model["available_model"]):
+                        if self.model != "text-davinci-003":
+                            OPENAI_COMPLETION_OPTIONS["messages"] = messages
+                            OPENAI_COMPLETION_OPTIONS["model"] = self.model
+                        else:
+                            prompt = self._generate_prompt(message, dialog_messages, chat_mode)
+                            OPENAI_COMPLETION_OPTIONS["prompt"] = prompt
+                            OPENAI_COMPLETION_OPTIONS["engine"] = self.model
+                        
+                        r = await openai.ChatCompletion.acreate(
+                            stream=True,
+                            **OPENAI_COMPLETION_OPTIONS
+                        )
                     else:
-                        prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                        OPENAI_COMPLETION_OPTIONS["prompt"] = prompt
-                        OPENAI_COMPLETION_OPTIONS["engine"] = self.model
-                    r = await openai.ChatCompletion.acreate(
-                        stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
-                    )
-                    answer = ""
-                    if self.model != "text-davinci-003":
+                        raise ValueError(f"Modelo desconocido: {self.model}")
+                answer = ""
+                if api == "you":
+                    print("recibió response")
+                    answer += r["text"]
+                    if len(r["links"]) >= 1:
+                        answer += "\n\nLinks: \n"
+                        for link in r["links"]:
+                            answer += f"\n- <a href='{link['url']}'>{link['name']}</a>" 
+                    yield "not_finished", answer
+                elif api == "chatbase":
+                    answer = r
+                    yield "not_finished", answer
+                elif self.model != "text-davinci-003":
                         async for r_item in r:
                             delta = r_item.choices[0].delta
                             if "content" in delta:
                                 answer += delta.content
                                 yield "not_finished", answer
-                    else:
-                        async for r_item in r:
-                            answer += r_item.choices[0].text
-                            yield "not_finished", answer
                 else:
-                    raise ValueError(f"Modelo desconocido: {self.model}")
+                    async for r_item in r:
+                        answer += r_item.choices[0].text
+                        yield "not_finished", answer
                 answer = self._postprocess_answer(answer)
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:

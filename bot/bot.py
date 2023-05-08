@@ -432,8 +432,10 @@ async def get_menu(update: Update, user_id: int, menu_type: str):
         db.set_user_attribute(user_id, "current_model", modelos_disponibles[0])
         await send_reply(update, f'Tu modelo actual no es compatible con la API actual, por lo que se ha cambiado el modelo automáticamente a "{config.model["info"][db.get_user_attribute(user_id, "current_model")]["name"]}".')
         pass
-
-    item_keys = menu_type_dict[f"available_{menu_type}"]
+    if menu_type == "model":
+        item_keys = modelos_disponibles
+    else:
+        item_keys = menu_type_dict[f"available_{menu_type}"]
         
     current_key = db.get_user_attribute(user_id, f"current_{menu_type}")
     
@@ -492,6 +494,12 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
     db.set_user_attribute(user_id, "current_chat_mode", mode)
     await new_dialog_handle(update, context)
+    text, reply_markup = await get_menu(update, user_id, "chat_mode")
+    try:
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    except telegram.error.BadRequest as e:
+        if str(e).startswith("El mensaje no se modifica"):
+            pass
 
 async def model_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)

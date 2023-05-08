@@ -137,5 +137,8 @@ docker-compose.dev.yml
 
 docker-compose.yml
 
+bot/apis/OpenGPTtt/
+
 
 mongodb/
+bot/test.py

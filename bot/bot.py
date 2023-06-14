@@ -98,7 +98,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
     n_used_tokens = db.get_user_attribute(user.id, "n_used_tokens")
     if isinstance(n_used_tokens, int):  # old format
         new_n_used_tokens = {
-            "gpt-3.5-turbo": {
+            "gpt-3.5-turbo-16k": {
                 "n_input_tokens": 0,
                 "n_output_tokens": n_used_tokens
             }

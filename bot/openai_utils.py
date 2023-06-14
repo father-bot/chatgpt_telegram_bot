@@ -17,8 +17,8 @@ OPENAI_COMPLETION_OPTIONS = {
 
 
 class ChatGPT:
-    def __init__(self, model="gpt-3.5-turbo"):
-        assert model in {"text-davinci-003", "gpt-3.5-turbo", "gpt-4"}, f"Unknown model: {model}"
+    def __init__(self, model="gpt-3.5-turbo-16k"):
+        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-4-0613"}, f"Unknown model: {model}"
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
@@ -29,7 +29,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo", "gpt-4"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-4-0613"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -69,7 +69,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo", "gpt-4"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-4-0613"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -148,13 +148,13 @@ class ChatGPT:
         answer = answer.strip()
         return answer
 
-    def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
+    def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo-16k"):
         encoding = tiktoken.encoding_for_model(model)
 
-        if model == "gpt-3.5-turbo":
+        if model == "gpt-3.5-turbo-16k":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
-        elif model == "gpt-4":
+        elif model == "gpt-4-0613":
             tokens_per_message = 3
             tokens_per_name = 1
         else:

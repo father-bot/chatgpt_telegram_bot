@@ -1,7 +1,7 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
+available_text_models: ["gpt-3.5-turbo-16k", "gpt-4-0613", "text-davinci-003"]
 
 info:
-  gpt-3.5-turbo:
+  gpt-3.5-turbo-16k:
     type: chat_completion
     name: ChatGPT
     description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
@@ -14,7 +14,7 @@ info:
       Fast: 5
       Cheap: 5
 
-  gpt-4:
+  gpt-4-0613:
     type: chat_completion
     name: GPT-4
     description: GPT-4 is the <b>smartest</b> and most advanced model in the world. But it is slower and not as cost-efficient as ChatGPT. Best choice for <b>complex</b> intellectual tasks.

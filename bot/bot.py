@@ -277,7 +277,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
                 gen = chatgpt_instance.send_message_stream(
-                    message,
+                    _message,
                     dialog_messages=dialog_messages,
                     chat_mode=chat_mode,
                     user_id=user_id

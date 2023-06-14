@@ -1,9 +1,11 @@
 import config
+import database
 
 import tiktoken
 import openai
 openai.api_key = config.openai_api_key
 
+CHAT_MODES = config.chat_modes
 
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
@@ -19,8 +21,8 @@ class ChatGPT:
         assert model in {"text-davinci-003", "gpt-3.5-turbo", "gpt-4"}, f"Unknown model: {model}"
         self.model = model
 
-    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
+    async def send_message(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
+        if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
@@ -28,7 +30,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -59,8 +61,8 @@ class ChatGPT:
 
         return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
+    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant", user_id=None):
+        if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
@@ -68,7 +70,7 @@ class ChatGPT:
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode, user_id)
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
@@ -112,7 +114,7 @@ class ChatGPT:
         yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt = CHAT_MODES[chat_mode]["prompt_start"]
         prompt += "\n\n"
 
         # add chat context
@@ -128,8 +130,11 @@ class ChatGPT:
 
         return prompt
 
-    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+    def _generate_prompt_messages(self, message, dialog_messages, chat_mode, user_id):
+        if chat_mode != "custom_chat_mode":
+            prompt = CHAT_MODES[chat_mode]["prompt_start"]
+        else:
+            prompt = database.Database().get_user_attribute(user_id, "custom_prompt")
 
         messages = [{"role": "system", "content": prompt}]
         for dialog_message in dialog_messages:

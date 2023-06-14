@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 import config
+import openai_utils
 
 
 class Database:
@@ -35,6 +36,9 @@ class Database:
         user_dict = {
             "_id": user_id,
             "chat_id": chat_id,
+
+            "custom_prompt": openai_utils.CHAT_MODES["custom_chat_mode"]["prompt_start"],
+            "parse_mode": "html",
 
             "username": username,
             "first_name": first_name,

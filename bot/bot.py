@@ -268,7 +268,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         continue
                     else:
                         await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
-
+                except RetryAfter as e:
+                    retry_after = e.retry_after
+                    error_text = f"Limit rate seconds : {e}"
+                    logger.error(error_text)
+                    await asyncio.sleep(retry_after + 1)
+                
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
                 prev_answer = answer

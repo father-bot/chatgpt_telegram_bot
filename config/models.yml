@@ -1,4 +1,4 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-4", "text-davinci-003"]
+available_text_models: ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "text-davinci-003"]
 
 info:
   gpt-3.5-turbo:
@@ -6,8 +6,21 @@ info:
     name: ChatGPT
     description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
 
-    price_per_1000_input_tokens: 0.002
+    price_per_1000_input_tokens: 0.0015
     price_per_1000_output_tokens: 0.002
+
+    scores:
+      Smart: 3
+      Fast: 5
+      Cheap: 5
+
+  gpt-3.5-turbo-16k:
+    type: chat_completion
+    name: GPT-16K
+    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
+
+    price_per_1000_input_tokens: 0.003
+    price_per_1000_output_tokens: 0.004
 
     scores:
       Smart: 3

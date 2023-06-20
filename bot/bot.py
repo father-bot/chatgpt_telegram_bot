@@ -31,7 +31,7 @@ from telegram.ext import (
 from telegram.constants import ParseMode, ChatAction
 
 import config
-import database
+import cosmosdb as database
 import openai_utils
 
 

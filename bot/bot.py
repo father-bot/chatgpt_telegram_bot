@@ -675,8 +675,10 @@ def run_bot() -> None:
     user_filter = filters.ALL
     if len(config.allowed_telegram_usernames) > 0:
         usernames = [x for x in config.allowed_telegram_usernames if isinstance(x, str)]
-        user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
-        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+        any_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
+        user_ids = [x for x in any_ids if x > 0]
+        group_ids = [x for x in any_ids if x < 0]
+        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))

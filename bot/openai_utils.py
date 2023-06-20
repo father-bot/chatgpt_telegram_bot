@@ -69,11 +69,16 @@ class ChatGPT:
             try:
                 if self.model in {"gpt-3.5-turbo", "gpt-4"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                    r_gen = await openai.ChatCompletion.acreate(
-                        model=self.model,
-                        messages=messages,
-                        stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                    timeout = 5  # Установите необходимое время ожидания в секундах
+                    r_gen = await asyncio.wait_for(
+                        openai.ChatCompletion.acreate(
+                            model=self.model,
+                            messages=messages,
+                            stream=True,
+                            max_tokens=maxt,
+                            **OPENAI_COMPLETION_OPTIONS
+                        ),
+                        timeout=timeout
                     )
 
                     answer = ""

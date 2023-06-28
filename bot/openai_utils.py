@@ -14,6 +14,15 @@ OPENAI_COMPLETION_OPTIONS = {
 }
 
 
+OPENAI_COMPLETION_OPTIONS_16K = {
+    "temperature": 0.7,
+    "max_tokens": 190000,
+    "top_p": 1,
+    "frequency_penalty": 0,
+    "presence_penalty": 0
+}
+
+
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
         assert model in {"text-davinci-003", "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4"}, f"Unknown model: {model}"
@@ -27,12 +36,20 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"}:
+                if self.model in {"gpt-3.5-turbo", "gpt-4"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
+                    )
+                    answer = r.choices[0].message["content"]
+                if self.model in {"gpt-3.5-turbo-16k"}:
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    r = await openai.ChatCompletion.acreate(
+                        model=self.model,
+                        messages=messages,
+                        **OPENAI_COMPLETION_OPTIONS_16K
                     )
                     answer = r.choices[0].message["content"]
                 elif self.model == "text-davinci-003":

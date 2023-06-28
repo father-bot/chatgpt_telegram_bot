@@ -180,6 +180,43 @@ class ChatGPT:
         return n_input_tokens, n_output_tokens
 
 
+# We create the class ChatGPTMateo that inherits from ChatGPT, and we overwrite the methods that we want to change
+class ChatGPTMateo(ChatGPT):
+    def __init__(self, model="gpt-3.5-turbo", prompt='nada'):
+        import pandas as pd
+        import ast
+        import re
+
+        super().__init__(model=model)
+        print("INICIANDO ChatGPTMateo")
+
+        self.prompt = prompt
+        
+        df = pd.read_csv("data_med/df_solace.csv")
+        print('df cargado')
+        df['embedding'] = df['embedding'].apply(ast.literal_eval)
+        df.rename(columns={'artículo': 'text'}, inplace=True) 
+        # agregamos la columna 'n_articulo' al df, con el número del artículo, que se obtiene de la columna 'text'. El texto empieza con 'Artículo {n}. ' donde n es el número del artículo
+        df['n_articulo'] = df['text'].apply(lambda x: int(re.findall('\nartículo \d+', x.lower())[0].split(' ')[1]))
+        self.df = df # es el df con los artículos del reglameto de solace
+
+    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
+        if self.prompt == 'nada':
+            prompt = config.chat_modes[chat_mode]["prompt_start"]
+        else:
+            prompt = self.prompt
+
+        messages = [{"role": "system", "content": prompt}]
+        for dialog_message in dialog_messages:
+            messages.append({"role": "user", "content": dialog_message["user"]})
+            messages.append({"role": "assistant", "content": dialog_message["bot"]})
+        messages.append({"role": "user", "content": message})
+
+        return messages
+    
+
+
+
 async def transcribe_audio(audio_file):
     r = await openai.Audio.atranscribe("whisper-1", audio_file)
     return r["text"]

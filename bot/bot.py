@@ -1,14 +1,17 @@
-import os
-import logging
-import asyncio
-import traceback
-import html
-import json
-import tempfile
-import pydub
-from pathlib import Path
-from datetime import datetime
-import openai
+try:
+    import os
+    import logging
+    import asyncio
+    import traceback
+    import html
+    import json
+    import tempfile
+    import pydub
+    from pathlib import Path
+    from datetime import datetime
+    import openai
+except ImportError as e:
+    print(f"****Error importing modules: {e}")
 
 import telegram
 from telegram import (
@@ -193,6 +196,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     _message = message or update.message.text
 
+    if chat_mode == "mateo":
+        from mateo import get_prompt
+        print('punto 1 de mateo, preprocessing')
+        prompt = get_prompt(_message)
+        # todo ver cómo sobreescribir el prompt desde aquí
+
     # remove bot mention (in group chats)
     if update.message.chat.type != "private":
         _message = _message.replace("@" + context.bot.username, "").strip()
@@ -235,8 +244,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 "html": ParseMode.HTML,
                 "markdown": ParseMode.MARKDOWN
             }[config.chat_modes[chat_mode]["parse_mode"]]
+           
+            # if mode is 'mateo' we use a different chatgpt instance
+            if chat_mode == "mateo":
+                chatgpt_instance = openai_utils.ChatGPTMateo(model=current_model, prompt=prompt)
+            else:
+                chatgpt_instance = openai_utils.ChatGPT(model=current_model)
 
-            chatgpt_instance = openai_utils.ChatGPT(model=current_model)
             if config.enable_message_streaming:
                 gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
@@ -246,7 +260,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                     chat_mode=chat_mode
                 )
 
-                async def fake_gen():
+                async def fake_gen(): 
                     yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
                 gen = fake_gen()
@@ -668,7 +682,11 @@ def run_bot() -> None:
         .post_init(post_init)
         .build()
     )
-
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Starting bot")
+    print("Starting bot, print Ctrl-C to stop")
     # add handlers
     user_filter = filters.ALL
     if len(config.allowed_telegram_usernames) > 0:
@@ -703,4 +721,13 @@ def run_bot() -> None:
 
 
 if __name__ == "__main__":
-    run_bot()
+    try:
+        run_bot()
+    except Exception as e:
+        print('Exception in main: ' + str(e))
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.error(e)
+        logger.error(traceback.format_exc())
+        

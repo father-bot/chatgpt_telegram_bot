@@ -21,7 +21,12 @@ def get_n_articulos(pregunta):
     )
 
     res = response['choices'][0]['message']['content']
-    res_dict = json.loads(res)
+    try:
+        res_dict = json.loads(res)
+    except:
+        res_dict = {'articulos': [], 'anexos': []}
+
+    print(f'Qué artículos se citan:{res}')
 
     return res_dict
 

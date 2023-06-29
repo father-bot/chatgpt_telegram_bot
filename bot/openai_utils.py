@@ -6,8 +6,8 @@ openai.api_key = config.openai_api_key
 
 
 OPENAI_COMPLETION_OPTIONS = {
-    "temperature": 0.7,
-    "max_tokens": 1000,
+    "temperature": 0.5,
+    "max_tokens": 300,
     "top_p": 1,
     "frequency_penalty": 0,
     "presence_penalty": 0
@@ -183,24 +183,14 @@ class ChatGPT:
 # We create the class ChatGPTMateo that inherits from ChatGPT, and we overwrite the methods that we want to change
 class ChatGPTMateo(ChatGPT):
     def __init__(self, model="gpt-3.5-turbo", prompt='nada'):
-        import pandas as pd
-        import ast
-        import re
 
         super().__init__(model=model)
         print("INICIANDO ChatGPTMateo")
 
         self.prompt = prompt
         
-        df = pd.read_csv("data_med/df_solace.csv")
-        print('df cargado')
-        df['embedding'] = df['embedding'].apply(ast.literal_eval)
-        df.rename(columns={'artículo': 'text'}, inplace=True) 
-        # agregamos la columna 'n_articulo' al df, con el número del artículo, que se obtiene de la columna 'text'. El texto empieza con 'Artículo {n}. ' donde n es el número del artículo
-        df['n_articulo'] = df['text'].apply(lambda x: int(re.findall('\nartículo \d+', x.lower())[0].split(' ')[1]))
-        self.df = df # es el df con los artículos del reglameto de solace
-
     def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
+        print('++++estamos dentro de _generate_prompt_messages++++ de mateo')
         if self.prompt == 'nada':
             prompt = config.chat_modes[chat_mode]["prompt_start"]
         else:
@@ -211,6 +201,8 @@ class ChatGPTMateo(ChatGPT):
             messages.append({"role": "user", "content": dialog_message["user"]})
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
         messages.append({"role": "user", "content": message})
+
+        print('************messages************\n', messages    )
 
         return messages
     

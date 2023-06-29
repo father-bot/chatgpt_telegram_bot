@@ -196,11 +196,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     _message = message or update.message.text
 
-    if chat_mode == "mateo":
-        from mateo import get_prompt
-        print('punto 1 de mateo, preprocessing')
-        prompt = get_prompt(_message)
-        # todo ver cómo sobreescribir el prompt desde aquí
+  
 
     # remove bot mention (in group chats)
     if update.message.chat.type != "private":
@@ -212,6 +208,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
+    if chat_mode == "mateo":
+            from mateo import get_prompt
+            print('punto 1 de mateo, preprocessing')
+            prompt = get_prompt(_message)
+            # todo ver cómo sobreescribir el prompt desde aquí
+    
     if chat_mode == "artist":
         await generate_image_handle(update, context, message=message)
         return

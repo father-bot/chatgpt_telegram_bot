@@ -7,7 +7,7 @@ openai.api_key = config.openai_api_key
 
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
-    "max_tokens": 4097,
+    "max_tokens": 1000,
     "top_p": 1,
     "frequency_penalty": 0,
     "presence_penalty": 0

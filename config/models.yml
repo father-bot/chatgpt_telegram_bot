@@ -16,7 +16,7 @@ info:
 
   gpt-3.5-turbo-16k:
     type: chat_completion
-    name: ChatGPT
+    name: ChatGPT (16k)
     description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
 
     price_per_1000_input_tokens: 0.002

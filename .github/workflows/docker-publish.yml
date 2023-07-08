@@ -25,15 +25,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         
-      - name: Create Sentry release
-        uses: getsentry/action-release@v1.3.1
-        with:
-          environment: prod
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v2

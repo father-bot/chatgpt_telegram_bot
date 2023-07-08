@@ -1,23 +1,21 @@
-FROM python:3.8-slim
+FROM python:3.11-slim AS build-env
 
-RUN \
-    set -eux; \
-    apt-get update; \
-    DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
-    python3-pip \
-    build-essential \
-    python3-venv \
-    ffmpeg \
-    git \
-    ; \
-    rm -rf /var/lib/apt/lists/*
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONHASHSEED=random
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=on
+ENV PIP_DEFAULT_TIMEOUT=100
 
-RUN pip3 install -U pip && pip3 install -U wheel && pip3 install -U setuptools==59.5.0
-COPY ./requirements.txt /tmp/requirements.txt
-RUN pip3 install -r /tmp/requirements.txt && rm -r /tmp/requirements.txt
+RUN apt update && apt install --no-install-recommends -y python3 python3-pip python-dev-is-python3 build-essential python3-venv ffmpeg && \
+    python -m venv /opt/venv 
+ENV PATH="/opt/venv/bin:$PATH"
+ADD ./bot /app
+WORKDIR /app
+RUN /opt/venv/bin/pip3 --no-cache-dir install -r requirements.txt 
 
-COPY . /code
-WORKDIR /code
-
-CMD ["bash"]
-
+FROM python:3.11-slim
+COPY --from=build-env /opt/venv /opt/venv
+COPY --from=build-env /app /app
+ENV PATH="/opt/venv/bin:$PATH"
+ENTRYPOINT ["/opt/venv/bin/python3", "/app/bot.py"]

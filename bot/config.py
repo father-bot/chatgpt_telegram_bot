@@ -1,6 +1,7 @@
 import yaml
 import dotenv
 from pathlib import Path
+from os import environ
 
 config_dir = Path(__file__).parent.parent.resolve() / "config"
 
@@ -12,7 +13,8 @@ with open(config_dir / "config.yml", 'r') as f:
 config_env = dotenv.dotenv_values(config_dir / "config.env")
 
 # config parameters
-telegram_token = config_yaml["telegram_token"]
+telegram_base_url = config_yaml.get("telegram_base_url", "https://api.telegram.org/bot")
+telegram_token = config_yaml.get("telegram_token")
 openai_api_key = config_yaml["openai_api_key"]
 use_chatgpt_api = config_yaml.get("use_chatgpt_api", True)
 allowed_telegram_usernames = config_yaml["allowed_telegram_usernames"]
@@ -22,6 +24,11 @@ return_n_generated_images = config_yaml.get("return_n_generated_images", 1)
 n_chat_modes_per_page = config_yaml.get("n_chat_modes_per_page", 5)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
+# env config overrides
+telegram_base_url = environ.get("TELEGRAM_BASE_URL", telegram_base_url)
+telegram_token = environ.get("TELEGRAM_TOKEN", telegram_token)
+openai_api_key = environ.get("OPENAI_API_KEY", openai_api_key)
+mongodb_uri = environ.get("MONGODB_URI", "mongodb://127.0.0.1:27017/mongo")
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r') as f:
     chat_modes = yaml.safe_load(f)

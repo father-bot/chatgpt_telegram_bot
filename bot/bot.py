@@ -662,6 +662,7 @@ async def post_init(application: Application):
 def run_bot() -> None:
     application = (
         ApplicationBuilder()
+        .base_url(config.telegram_base_url)
         .token(config.telegram_token)
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))

@@ -1,32 +1,29 @@
 version: "3"
-
+volumes:
+  mongodb:
 services:
   mongo:
     container_name: mongo
     image: mongo:latest
-    restart: always
-    ports:
-      - 127.0.0.1:${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD
     volumes:
-      - ${MONGODB_PATH:-./mongodb}:/data/db
-    # TODO: add auth
+      - mongodb:/data/db
 
   chatgpt_telegram_bot:
-    container_name: chatgpt_telegram_bot
-    command: python3 bot/bot.py
-    restart: always
-    build:
-      context: "."
-      dockerfile: Dockerfile
+    restart: unless-stopped
+    image: ghcr.io/luginbash/chatgpt_telegram_bot:latest
+    volumes:
+    - ./config:/config:ro
     depends_on:
       - mongo
 
   mongo_express:
     container_name: mongo-express
     image: mongo-express:latest
-    restart: always
-    ports:
-      - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:${MONGO_EXPRESS_PORT:-8081}
+    restart: unless-stopped
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=${MONGODB_PORT:-27017}

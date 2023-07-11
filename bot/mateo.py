@@ -22,7 +22,7 @@ def _carga_embedding():
     import re
 
 
-    df = pd.read_csv("data_med/df_solace.csv")
+    df = pd.read_csv("bot/data_med/df_solace.csv")
     print('df cargado')
     df['embedding'] = df['embedding'].apply(ast.literal_eval)
     df.rename(columns={'artículo': 'text'}, inplace=True)

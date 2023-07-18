@@ -11,13 +11,20 @@ def get_n_articulos(pregunta):
     import json
     messages = [
         {'role': 'system',
-         'content': 'Tienes que responder la pregunta qué artículos y qué anexos se mencionan en la pregunta en el siguiente formato:{"articulos":[1,3],"anexos":[2]}\n###\n'+pregunta}
+         'content': '''Tienes que identificar qué artículos y qué anexos se mencionan explicitamente en la pregunta que te dará el usuario.
+            Por ejemplo, si el usuario te pregunta "qué pasa si desobedezco el artículo 22", la respuesta sería: {"articulos":[22], "anexos":[], "se menciona explicatamete la 'artículo 22'}.
+            Es posible que se mencionen varios artículos y anexos o ninguno. En ese caso, la respuesta sería: {"articulos":[],"anexos":[], 'justificacion':'no se detecta ningún artículo o anexo en la pregunta'}.
+            Para ello, tienes que responder con un json en el siguiente formato:{"articulos":[1,3],"anexos":[2],'justificacion':'porque el texto dice explicitamente...'}
+            
+            '''
+         },
+        {'role': 'user', 'content': pregunta}
     ]
     response = openai.ChatCompletion.create(
         model=GPT_MODEL,
         messages=messages,
-        temperature=0.1,
-        max_tokens=150
+        temperature=0,
+        max_tokens=350
     )
 
     res = response['choices'][0]['message']['content']

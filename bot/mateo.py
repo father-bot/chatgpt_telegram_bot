@@ -11,6 +11,7 @@ def get_prompt(pregunta, doc=DOC_SOLACE):
     articulos_str = encadena_articulos(articulos_mencionados+articulos_by_embedding, max_tokens=3500)
 
     prompt = _get_prompt(articulos_str)
+    print('prompt: ', prompt)
     return prompt
 
 
@@ -32,8 +33,16 @@ def _carga_embedding(doc):
     df = pd.read_csv(path)
     print(f'df cargado desde {path}')
     df['embedding'] = df['embedding'].apply(ast.literal_eval)
-    df.rename(columns={'artículo': 'text'}, inplace=True)
-    # agregamos la columna 'n_articulo' al df, con el número del artículo, que se obtiene de la columna 'text'. El texto empieza con 'Artículo {n}. ' donde n es el número del artículo
-    df['n_articulo'] = df['text'].apply(lambda x: int(re.findall('\nartículo \d+', x.lower())[0].split(' ')[1]))
-
+    if doc == DOC_SOLACE:
+        df.rename(columns={'artículo': 'text'}, inplace=True)
+        # agregamos la columna 'n_articulo' al df, con el número del artículo, que se obtiene de la columna 'text'. El texto empieza con 'Artículo {n}. ' donde n es el número del artículo
+        df['n_articulo'] = df['text'].apply(lambda x: int(re.findall('\nartículo \d+', x.lower())[0].split(' ')[1]))
+    elif doc == DOC_DT:
+        # to do, hacer que sean iguales los ficheros de embeddings
+        df.rename(columns={'Unnamed: 0': 'n_articulo'}, inplace=True)
+        # le sumamos 1 a n_articulo para que coincida con el número de artículo
+        df['n_articulo'] = df['n_articulo'] + 1
+        # a cada texto le anteponemos "Artículo {n}." para que GPT-3 lo use como prompt
+        df['text'] = df.apply(lambda x: f'Artículo {int(x["n_articulo"])}. {x["text"]}', axis=1)
+   
     return df

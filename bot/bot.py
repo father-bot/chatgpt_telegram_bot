@@ -209,14 +209,14 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
     if chat_mode == "mateo":
-            from mateo import get_prompt
+            from mateo import get_prompt, DOC_SOLACE
             print('punto 1 de mateo, preprocessing')
-            prompt = get_prompt(_message)
+            prompt = get_prompt(_message, DOC_SOLACE)
             # todo ver cómo sobreescribir el prompt desde aquí
     elif chat_mode == "mateo_DT":
-            from mateo import get_prompt
+            from mateo import get_prompt, DOC_DT
             print('punto 1 de mateo, preprocessing')
-            prompt = get_prompt(_message)
+            prompt = get_prompt(_message, DOC_DT)
 
     
     if chat_mode == "artist":
@@ -253,7 +253,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             }[config.chat_modes[chat_mode]["parse_mode"]]
            
             # if mode is 'mateo' we use a different chatgpt instance
-            if chat_mode == "mateo":
+            if chat_mode == "mateo" or chat_mode == "mateo_DT":
                 chatgpt_instance = openai_utils.ChatGPTMateo(model=current_model, prompt=prompt)
             else:
                 chatgpt_instance = openai_utils.ChatGPT(model=current_model)

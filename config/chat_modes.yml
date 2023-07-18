@@ -13,5 +13,5 @@ mateo_DT:
   model_type: text
   welcome_message: Buenas! Soy <b>Mateo</b>, de <b>artBPO</b>. Me estudié el Código del trabajo, así que hazme todas las preguntas que quieras.
   prompt_start: |
-    Eres un experto en el Código del Trabajo Chileno. Responderás preguntas basadas en el siguiente texto. Si la respuesta no se haya ahí, empezarás la respuesta diciendo "me parece que...":
+    f'Debes responder la pregunta del usuario basandote únicamente en el siguiente texto. Sólo si no encuentras ninguna respuesta en el texto, di "NO HAY INFORMACIÓN". Menciona los articulos en que te basas. El texto es el siguiente: \n###\n{articulos_str}'},
   parse_mode: html

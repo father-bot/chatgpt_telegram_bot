@@ -213,6 +213,11 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             print('punto 1 de mateo, preprocessing')
             prompt = get_prompt(_message)
             # todo ver cómo sobreescribir el prompt desde aquí
+    elif chat_mode == "mateo_DT":
+            from mateo import get_prompt
+            print('punto 1 de mateo, preprocessing')
+            prompt = get_prompt(_message)
+
     
     if chat_mode == "artist":
         await generate_image_handle(update, context, message=message)

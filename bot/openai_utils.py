@@ -202,11 +202,65 @@ class ChatGPTMateo(ChatGPT):
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
         messages.append({"role": "user", "content": message})
 
-        print('************messages************\n', messages    )
+        print('************messages************\n', messages)
 
         return messages
-    
 
+
+class ChatGPTMario(ChatGPT):
+    def __init__(self, model="gpt-3.5-turbo", prompt='nada'):
+
+        super().__init__(model=model)
+        print("INICIANDO ChatGPTMateo")
+
+        self.prompt = prompt
+
+    def _generate_prompt_messages(self, message, dialog_messages, chat_mode):
+        print('++++estamos dentro de _generate_prompt_messages++++ de Mario')
+        if self.prompt == 'nada':
+            prompt = config.chat_modes[chat_mode]["prompt_start"]
+            prompt = self._agrega_campos_formulario(prompt)
+        else:
+            prompt = self.prompt
+
+        messages = [{"role": "system", "content": prompt}]
+        for dialog_message in dialog_messages:
+            messages.append({"role": "user", "content": dialog_message["user"]})
+            messages.append({"role": "assistant", "content": dialog_message["bot"]})
+        messages.append({"role": "user", "content": message})
+
+        print('************messages************\n', messages)
+
+        return messages
+
+    def _get_campos(self):
+        # cargamos los json
+        import json
+        path = 'bot/data_in/12_Mario/'
+        with open(path+'/campos.json', 'r') as fp:
+            d = json.load(fp)
+
+        with open(path+'omitibles.json', 'r') as fp:
+            omitibles = json.load(fp)
+
+        # convertimos a string el diccionario tal cual
+        str_d = str(d)
+        str_omitibles = str(omitibles)
+        str_dicts = f'solicitudes = {str_d}\n\nomitibles = {str_omitibles}'
+        tipos = list(d.keys())
+        return str_dicts, tipos
+
+    def _agrega_campos_formulario(self, prompt):
+        from datetime import datetime
+
+        now = datetime.now()
+        now = now.strftime("%d/%m/%Y")
+
+        str_dicts, tipos = self._get_campos()
+        diccionario = {'now': now, 'tipos': tipos, 'str_dicts': str_dicts}
+        prompt = prompt.format(**diccionario)
+
+        return prompt
 
 
 async def transcribe_audio(audio_file):

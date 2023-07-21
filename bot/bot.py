@@ -255,6 +255,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             # if mode is 'mateo' we use a different chatgpt instance
             if chat_mode == "mateo" or chat_mode == "mateo_DT":
                 chatgpt_instance = openai_utils.ChatGPTMateo(model=current_model, prompt=prompt)
+            elif chat_mode == "mario":
+                chatgpt_instance = openai_utils.ChatGPTMario(model=current_model)
             else:
                 chatgpt_instance = openai_utils.ChatGPT(model=current_model)
 

@@ -1,0 +1,72 @@
+{
+  "Cálculo de finiquito": [
+    "Fecha de desvinculación",
+    "Comentario",
+    "Rut",
+    "Causal de desvinculación",
+    "Dirección de correo electrónico"
+  ],
+  "Cambio de condiciones contractuales": [
+    "Fecha de inicio",
+    "Cargo",
+    "Tipo de contrato",
+    "Tipo de Jornada",
+    "Sueldo base",
+    "Movilización",
+    "Comisión",
+    "Bono permanente",
+    "Otro Haber",
+    "Comentario",
+    "Cédula de identidad",
+    "Dirección de correo electrónico"
+  ],
+  "Certificado": [
+    "Comentario",
+    "Dirección de correo electrónico",
+    "Rut del trabajador"
+  ],
+  "Contratación": [
+    "RUT",
+    "Nombres",
+    "Apellido",
+    "Segundo Apellido",
+    "Fecha de nacimiento",
+    "Sexo",
+    "Estado civil",
+    "Nacionalidad",
+    "Dirección",
+    "Comuna",
+    "Ciudad",
+    "Teléfono Particular",
+    "Email Personal",
+    "Fondo de cotización",
+    "Fonasa/Isapre",
+    "Valor plan de salud (UF) (En Blanco si es Fonasa)",
+    "Fecha inicio en el cargo",
+    "Propiedad",
+    "Gerencia (CC)",
+    "Tipo de contrato",
+    "Tipo de Jornada",
+    "Cargo",
+    "Sueldo base",
+    "Movilización",
+    "Banco",
+    "Tipo de cuenta",
+    "N° de cuenta",
+    "Familiares en el Hotel",
+    "Comentario",
+    "Valor día 1",
+    "Valor día 2",
+    "Valor hora 1",
+    "Valor hora 2",
+    "Dirección de correo electrónico",
+    "Contacto de emergencia"
+  ],
+  "Vacaciones": [
+    "Fecha de inicio",
+    "Fecha de término",
+    "Comentario",
+    "Rut del trabajador",
+    "Dirección de correo electrónico"
+  ]
+}

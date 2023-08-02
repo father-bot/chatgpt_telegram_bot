@@ -1,5 +1,5 @@
 import config
-
+from litellm import completion
 import tiktoken
 import openai
 
@@ -48,6 +48,15 @@ class ChatGPT:
                         **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].text
+                elif self.model in ["gpt-3.5-turbo-16k-0613", "command-nightly", "claude-2", "claude-instant-1", "chat-bison-001", "text-bison-001"] or "replicate" in self.model:
+                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                    r = completion(
+                        model=self.model,
+                        messages=messages,
+                        stream=True,
+                        **OPENAI_COMPLETION_OPTIONS
+                    )
+                    answer = r.choices[0].message["content"]
                 else:
                     raise ValueError(f"Unknown model: {self.model}")
 
@@ -104,8 +113,6 @@ class ChatGPT:
                         n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
                         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
                         yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
-
-                answer = self._postprocess_answer(answer)
 
             except openai.error.InvalidRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:

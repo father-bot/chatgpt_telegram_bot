@@ -94,7 +94,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     # back compatibility for n_used_tokens field
     n_used_tokens = db.get_user_attribute(user.id, "n_used_tokens")
-    if isinstance(n_used_tokens, int):  # old format
+    if isinstance(n_used_tokens, int) or isinstance(n_used_tokens, float):  # old format
         new_n_used_tokens = {
             "gpt-3.5-turbo": {
                 "n_input_tokens": 0,
@@ -665,6 +665,8 @@ def run_bot() -> None:
         .token(config.telegram_token)
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))
+        .http_version("1.1")
+        .get_updates_http_version("1.1")
         .post_init(post_init)
         .build()
     )
@@ -673,8 +675,10 @@ def run_bot() -> None:
     user_filter = filters.ALL
     if len(config.allowed_telegram_usernames) > 0:
         usernames = [x for x in config.allowed_telegram_usernames if isinstance(x, str)]
-        user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
-        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+        any_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
+        user_ids = [x for x in any_ids if x > 0]
+        group_ids = [x for x in any_ids if x < 0]
+        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))

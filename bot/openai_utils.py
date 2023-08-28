@@ -15,7 +15,8 @@ OPENAI_COMPLETION_OPTIONS = {
     "max_tokens": 1000,
     "top_p": 1,
     "frequency_penalty": 0,
-    "presence_penalty": 0
+    "presence_penalty": 0,
+    "request_timeout": 60.0,
 }
 
 

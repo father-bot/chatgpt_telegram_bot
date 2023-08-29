@@ -92,23 +92,25 @@ You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot
 
 1. [LilRocco](https://t.me/LilRocco). Donation: **1000$** (!!!)
 
-2. [unexpectedsunday](https://t.me/unexpectedsunday). Donation: **150$**
+2. [Mr V](https://t.me/mr_v_v_v). Donation **250$**
 
-3. [Sem](https://t.me/sembrestels). Donation: **100$**
+3. [unexpectedsunday](https://t.me/unexpectedsunday). Donation: **150$**
 
-4. [Ryo](https://t.me/ryokihara). Donation: **80$**
+4. [Sem](https://t.me/sembrestels). Donation: **100$**
 
-5. [Ilias Ism](https://twitter.com/illyism). Donation: **69$**
+5. [Ryo](https://t.me/ryokihara). Donation: **80$**
+
+6. [Ilias Ism](https://twitter.com/illyism). Donation: **69$**
 
     *Message:* I wanted to thank you for your amazing code! It helped me start my own Telegram ChatGPT bot and add a bunch of cool features. I really appreciate your hard work on this project. For anyone interested in trying my bot, feel free to check it out here: [magicbuddy.chat](https://magicbuddy.chat) 🤖 Thanks again! 😊
 
-6. [Sebastian](https://t.me/dell1503). Donation: **55$**
+7. [Sebastian](https://t.me/dell1503). Donation: **55$**
 
-7. [Alexander Zimin](https://t.me/azimin). Donation: **50$**
+8. [Alexander Zimin](https://t.me/azimin). Donation: **50$**
 
-8. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
+9. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
 
-9. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+10. [Hans Blinken](https://t.me/hblink). Donation: **10$**
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

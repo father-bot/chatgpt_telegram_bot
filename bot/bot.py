@@ -271,9 +271,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
-                if status == "finished":
-                    audio_url = text_to_speech.create_audio(answer)
-                    await update.message.reply_voice(audio_url)
+                # if status == "finished":
+                    # audio_url = text_to_speech.create_audio(answer)
+                    # await update.message.reply_voice(audio_url)
 
                 prev_answer = answer
 

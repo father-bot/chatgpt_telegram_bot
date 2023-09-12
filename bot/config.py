@@ -11,9 +11,9 @@ config_dir = Path(__file__).parent.parent.resolve() / "config"
 config_env = os.environ.copy()
 
 # config parameters
-telegram_token = config_yaml["telegram_token"]
-openai_api_key = config_yaml["openai_api_key"]
-openai_api_base = config_yaml.get("openai_api_base", None)
+telegram_token = config_env["telegram_token"]
+openai_api_key = config_env["openai_api_key"]
+openai_api_base = config_env.get("openai_api_base", None)
 if config_env["allowed_telegram_usernames"]:
     allowed_telegram_usernames = json.loads(config_env["allowed_telegram_usernames"])
 else:

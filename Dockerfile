@@ -20,10 +20,5 @@ RUN pip3 install -r /tmp/requirements.txt && rm -r /tmp/requirements.txt
 RUN mkdir -p /code
 COPY . /code
 WORKDIR /code
-ADD requirements.txt .
-
-CMD ["bash"]
-
-ADD . .
 
 CMD ["python3", "bot/bot.py"]

@@ -22,8 +22,9 @@ new_dialog_timeout = int(config_env["new_dialog_timeout"])
 enable_message_streaming = bool(config_env.get("enable_message_streaming", True))
 return_n_generated_images = int(config_env.get("return_n_generated_images", 1))
 n_chat_modes_per_page = int(config_env.get("n_chat_modes_per_page", 5))
-mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
-
+mongodb_uri = config_env["mongodb_uri"]
+mongodb_user = config_env["mongodb_user"]
+mongodb_pass = config_env["mongodb_pass"]
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r') as f:
     chat_modes = yaml.safe_load(f)

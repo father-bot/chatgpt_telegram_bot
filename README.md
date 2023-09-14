@@ -49,7 +49,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - [ЮMoney](https://yoomoney.ru)
 - and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
 
-If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)).
+If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)) or Email (kar.iskakov@gmail.com).
 
 ## News
 - *21 Apr 2023*:

@@ -1,3 +1,4 @@
+import argparse
 import os
 import logging
 import asyncio
@@ -10,6 +11,7 @@ from pathlib import Path
 from datetime import datetime
 import openai
 
+import openai
 import telegram
 from telegram import (
     Update,
@@ -31,12 +33,12 @@ from telegram.ext import (
 from telegram.constants import ParseMode, ChatAction
 
 import config
-import database
+import database_sqlite
+import database_mongo
 import openai_utils
 
-
 # setup
-db = database.Database()
+db = None
 logger = logging.getLogger(__name__)
 
 user_semaphores = {}
@@ -66,6 +68,9 @@ To get a reply from the bot in the chat – @ <b>tag</b> it or <b>reply</b> to i
 For example: "{bot_username} write a poem about Telegram"
 """
 
+DEFAULT_TIMEOUT = 15
+DEFAULT_RETRY_TIMEOUT = 20
+
 
 def split_text_into_chunks(text, chunk_size):
     for i in range(0, len(text), chunk_size):
@@ -79,7 +84,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             update.message.chat_id,
             username=user.username,
             first_name=user.first_name,
-            last_name= user.last_name
+            last_name=user.last_name
         )
         db.start_new_dialog(user.id)
 
@@ -170,13 +175,10 @@ async def retry_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
-    if len(dialog_messages) == 0:
+    last_dialog_message = db.remove_dialog_last_message(user_id)
+    if last_dialog_message is None:
         await update.message.reply_text("No message to retry 🤷‍♂️")
         return
-
-    last_dialog_message = dialog_messages.pop()
-    db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
 
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
@@ -274,20 +276,13 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 prev_answer = answer
 
             # update user data
-            new_dialog_message = {"user": _message, "bot": answer, "date": datetime.now()}
-            db.set_dialog_messages(
-                user_id,
-                db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
-                dialog_id=None
-            )
-
-            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
-
+            new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
+            db.append_dialog_message(user_id, new_dialog_message, dialog_id=None)
+            db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens) 
         except asyncio.CancelledError:
             # note: intermediate token updates only work when enable_message_streaming=True (config.yml)
             db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
             raise
-
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
             logger.error(error_text)
@@ -660,6 +655,21 @@ async def post_init(application: Application):
     ])
 
 def run_bot() -> None:
+    global db
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--database", type=str)
+    parser.add_argument("-p", "--proxy", type=str)
+    curr_args = parser.parse_args()
+    if curr_args.database == "sqlite":
+        db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
+    else:
+        db = database_mongo.MongoDataBase(config.mongodb_uri)
+
+    bot_proxy = None
+    if curr_args.proxy and len(curr_args.proxy) > 0:
+        bot_proxy = f"http://{curr_args.proxy}"
+        openai.proxy = bot_proxy
+
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)
@@ -668,6 +678,9 @@ def run_bot() -> None:
         .http_version("1.1")
         .get_updates_http_version("1.1")
         .post_init(post_init)
+        .proxy_url(bot_proxy)
+        .get_updates_proxy_url(bot_proxy)
+        .connect_timeout(DEFAULT_TIMEOUT)
         .build()
     )
 

@@ -90,7 +90,7 @@ If you want to add payments to your bot and create profitable business – write
 ## ❤️ Top donations
 You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
 
-1. [LilRocco](https://t.me/LilRocco). Donation: **1000$** (!!!)
+1. [LilRocco](https://t.me/LilRocco). Donation: **11000$** (!!!)
 
 1. [Mr V](https://t.me/mr_v_v_v). Donation **250$**
 

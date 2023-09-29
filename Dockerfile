@@ -15,6 +15,7 @@ WORKDIR /app
 RUN /opt/venv/bin/pip3 --no-cache-dir install -r requirements.txt 
 
 FROM python:3.11-slim
+RUN apt update && apt install ffmpeg
 COPY --from=build-env /opt/venv /opt/venv
 COPY --from=build-env /app /app
 ENV PATH="/opt/venv/bin:$PATH"

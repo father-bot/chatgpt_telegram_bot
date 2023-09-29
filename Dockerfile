@@ -15,7 +15,13 @@ WORKDIR /app
 RUN /opt/venv/bin/pip3 --no-cache-dir install -r requirements.txt 
 
 FROM python:3.11-slim
-RUN apt update && apt install ffmpeg
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONHASHSEED=random
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=on
+ENV PIP_DEFAULT_TIMEOUT=100
+RUN apt update && apt install -y ffmpeg && apt autoclean
 COPY --from=build-env /opt/venv /opt/venv
 COPY --from=build-env /app /app
 ENV PATH="/opt/venv/bin:$PATH"

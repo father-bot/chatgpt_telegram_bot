@@ -2,7 +2,12 @@ import config
 
 import tiktoken
 import openai
+
+
+# setup openai
 openai.api_key = config.openai_api_key
+if config.openai_api_base is not None:
+    openai.api_base = config.openai_api_base
 
 
 OPENAI_COMPLETION_OPTIONS = {
@@ -10,7 +15,8 @@ OPENAI_COMPLETION_OPTIONS = {
     "max_tokens": 1000,
     "top_p": 1,
     "frequency_penalty": 0,
-    "presence_penalty": 0
+    "presence_penalty": 0,
+    "request_timeout": 60.0,
 }
 
 
@@ -151,7 +157,7 @@ class ChatGPT:
             tokens_per_name = -1  # if there's a name, the role is omitted
         elif model == "gpt-3.5-turbo":
             tokens_per_message = 4
-            tokens_per_name = -1    
+            tokens_per_name = -1
         elif model == "gpt-4":
             tokens_per_message = 3
             tokens_per_name = 1
@@ -188,8 +194,8 @@ async def transcribe_audio(audio_file):
     return r["text"]
 
 
-async def generate_images(prompt, n_images=4):
-    r = await openai.Image.acreate(prompt=prompt, n=n_images, size="512x512")
+async def generate_images(prompt, n_images=4, size="512x512"):
+    r = await openai.Image.acreate(prompt=prompt, n=n_images, size=size)
     image_urls = [item.url for item in r.data]
     return image_urls
 

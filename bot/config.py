@@ -24,11 +24,11 @@ n_chat_modes_per_page = config_yaml.get("n_chat_modes_per_page", 5)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
 # chat_modes
-with open(config_dir / "chat_modes.yml", 'r') as f:
+with open(config_dir / "chat_modes.yml", 'r', encoding='utf8') as f:
     chat_modes = yaml.safe_load(f)
 
 # models
-with open(config_dir / "models.yml", 'r') as f:
+with open(config_dir / "models.yml", 'r', encoding='utf8') as f:
     models = yaml.safe_load(f)
 
 # files

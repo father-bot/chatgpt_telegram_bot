@@ -18,6 +18,8 @@ services:
     build:
       context: "."
       dockerfile: Dockerfile
+    env_file:
+      - "./config/config.env"
     depends_on:
       - mongo
 

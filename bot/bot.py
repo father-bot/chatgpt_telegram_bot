@@ -1,12 +1,9 @@
-import os
+import io
 import logging
 import asyncio
 import traceback
 import html
 import json
-import tempfile
-import pydub
-from pathlib import Path
 from datetime import datetime
 import openai
 
@@ -342,25 +339,15 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     voice = update.message.voice
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = Path(tmp_dir)
-        voice_ogg_path = tmp_dir / "voice.ogg"
+    voice_file = await context.bot.get_file(voice.file_id)
+    
+    # store file in memory, not on disk
+    buf = io.BytesIO()
+    await voice_file.download_to_memory(buf)
+    buf.name = "voice.oga"  # file extension is required
+    buf.seek(0)  # move cursor to the beginning of the buffer
 
-        # download
-        voice_file = await context.bot.get_file(voice.file_id)
-        await voice_file.download_to_drive(voice_ogg_path)
-
-        # convert to mp3
-        voice_mp3_path = tmp_dir / "voice.mp3"
-        pydub.AudioSegment.from_file(voice_ogg_path).export(voice_mp3_path, format="mp3")
-
-        # transcribe
-        with open(voice_mp3_path, "rb") as f:
-            transcribed_text = await openai_utils.transcribe_audio(f)
-
-            if transcribed_text is None:
-                 transcribed_text = ""
-
+    transcribed_text = await openai_utils.transcribe_audio(buf)
     text = f"🎤: <i>{transcribed_text}</i>"
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 

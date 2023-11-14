@@ -340,7 +340,7 @@ async def voice_message_handle(update: Update, context: CallbackContext):
 
     voice = update.message.voice
     voice_file = await context.bot.get_file(voice.file_id)
-    
+
     # store file in memory, not on disk
     buf = io.BytesIO()
     await voice_file.download_to_memory(buf)
@@ -370,7 +370,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
 
     try:
         image_urls = await openai_utils.generate_images(message, n_images=config.return_n_generated_images, size=config.image_size)
-    except openai.error.InvalidRequestError as e:
+    except openai.OpenAIError  as e:
         if str(e).startswith("Your request was rejected as a result of our safety system"):
             text = "🥲 Your request <b>doesn't comply</b> with OpenAI's usage policies.\nWhat did you write there, huh?"
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -521,9 +521,9 @@ def get_settings_menu(user_id: int):
             title = "✅ " + title
 
         buttons.append(
-            InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
+            [InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")]
         )
-    reply_markup = InlineKeyboardMarkup([buttons])
+    reply_markup = InlineKeyboardMarkup(buttons)
 
     return text, reply_markup
 
@@ -648,7 +648,7 @@ async def post_init(application: Application):
 
 def run_bot() -> None:
     application = (
-        ApplicationBuilder()
+        Application.builder()
         .token(config.telegram_token)
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))

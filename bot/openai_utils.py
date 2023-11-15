@@ -183,3 +183,15 @@ async def generate_images(prompt, n_images=4, size="512x512"):
 async def is_content_acceptable(prompt):
     r = await aclient.moderations.create(input=prompt)
     return not all(r.results[0].categories.values())
+
+
+async def understand_images(messages):
+    r = await aclient.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=messages,
+        **OPENAI_COMPLETION_OPTIONS
+    )
+    answer = r.choices[0].message.content
+    n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
+
+    return answer, (n_input_tokens, n_output_tokens)

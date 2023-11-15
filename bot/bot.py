@@ -30,7 +30,7 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
-
+from vision_handle import VISION_CONVERSATION_HANDLER,VISION_FILTER
 
 # setup
 db = database.Database()
@@ -644,6 +644,7 @@ async def post_init(application: Application):
         BotCommand("/balance", "Show balance"),
         BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
+        BotCommand("/vision", "Use GPT-4 to understand images"),
     ])
 
 def run_bot() -> None:
@@ -667,6 +668,8 @@ def run_bot() -> None:
         group_ids = [x for x in any_ids if x < 0]
         user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
+    user_filter = user_filter & ~VISION_FILTER
+
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
     application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
@@ -686,6 +689,8 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+
+    application.add_handler(VISION_CONVERSATION_HANDLER)
 
     application.add_error_handler(error_handle)
 

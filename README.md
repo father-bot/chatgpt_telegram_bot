@@ -49,7 +49,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - [ЮMoney](https://yoomoney.ru)
 - and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
 
-If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)).
+If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)) or Email (kar.iskakov@gmail.com).
 
 ## News
 - *21 Apr 2023*:
@@ -60,7 +60,8 @@ If you want to add payments to your bot and create profitable business – write
 - *15 Mar 2023*: Added message streaming. Now you don't have to wait until the whole message is ready, it's streamed to Telegram part-by-part (watch demo)
 - *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
-- *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction). It's enabled by default and can be disabled with `use_chatgpt_api` option in config. Don't forget to **rebuild** you docker image (`--build`).
+- *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
+- *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer
@@ -89,19 +90,31 @@ If you want to add payments to your bot and create profitable business – write
 ## ❤️ Top donations
 You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
 
+1. [LilRocco](https://t.me/LilRocco). Donation: **11000$** (!!!)
+
+1. [Mr V](https://t.me/mr_v_v_v). Donation **250$**
+
+1. [unexpectedsunday](https://t.me/unexpectedsunday). Donation: **150$**
+
 1. [Sem](https://t.me/sembrestels). Donation: **100$**
 
-2. [Ryo](https://t.me/ryokihara). Donation: **80$**
+1. [Miksolo](https://t.me/Miksolo). Donation: **81$**
 
-3. [Ilias Ism](https://twitter.com/illyism). Donation: **69$**
+    *Message:* Thank you. Using this docker container every day! Actually created the same project but its good to see that this one is being supported often. Will continue using it! Good architecture choices made in the code 💪!
+
+1. [Ryo](https://t.me/ryokihara). Donation: **80$**
+
+1. [Ilias Ism](https://twitter.com/illyism). Donation: **69$**
 
     *Message:* I wanted to thank you for your amazing code! It helped me start my own Telegram ChatGPT bot and add a bunch of cool features. I really appreciate your hard work on this project. For anyone interested in trying my bot, feel free to check it out here: [magicbuddy.chat](https://magicbuddy.chat) 🤖 Thanks again! 😊
 
-4. [Sebastian](https://t.me/dell1503). Donation: **55$**
+1. [Sebastian](https://t.me/dell1503). Donation: **55$**
 
-5. [Alexander Zimin](https://t.me/azimin). Donation: **50$**
+1. [Alexander Zimin](https://t.me/azimin). Donation: **50$**
 
-6. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+1. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
+
+1. [Hans Blinken](https://t.me/hblink). Donation: **10$**
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

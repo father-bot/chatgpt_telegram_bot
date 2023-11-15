@@ -24,7 +24,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - Low latency replies (it usually takes about 3-5 seconds)
 - No request limits
 - Message streaming (watch demo)
-- GPT-4 support
+- GPT-4 and GPT-4 Turbo support
 - Group Chat support (/help_group_chat to get instructions)
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
 - Voice message recognition
@@ -62,6 +62,7 @@ If you want to add payments to your bot and create profitable business – write
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
 - *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
+- *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer

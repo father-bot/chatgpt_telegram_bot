@@ -1,6 +1,6 @@
-python-telegram-bot[rate-limiter]==20.1
-openai==0.28.1
-tiktoken>=0.3.0
-PyYAML==6.0
-pymongo==4.3.3
-python-dotenv==0.21.0
+python-telegram-bot[rate-limiter]==20.5
+openai==1.3.3
+tiktoken==0.5.1
+PyYAML==6.0.1
+pymongo==4.6.0
+python-dotenv==1.0.0

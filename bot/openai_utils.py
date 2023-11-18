@@ -4,26 +4,29 @@ import tiktoken
 import openai
 
 
-# setup openai
-openai.api_key = config.openai_api_key
-if config.openai_api_base is not None:
-    openai.api_base = config.openai_api_base
-
-
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
     "max_tokens": 1000,
     "top_p": 1,
     "frequency_penalty": 0,
     "presence_penalty": 0,
-    "request_timeout": 60.0,
+    "timeout": 60.0,
 }
 
 
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
-        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}, f"Unknown model: {model}"
+        assert model in {
+            "text-davinci-003",
+            "gpt-3.5-turbo-16k",
+            "gpt-3.5-turbo",
+            "gpt-4",
+            "gpt-4-1106-preview",
+        }, f"Unknown model: {model}"
         self.model = model
+        self.aclient = openai.AsyncOpenAI(api_key=config.openai_api_key)
+        if config.openai_api_base is not None:
+            self.aclient.base_url = config.openai_api_base
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -33,39 +36,55 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                    r = await openai.ChatCompletion.acreate(
-                        model=self.model,
-                        messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
+                if self.model in {
+                    "gpt-3.5-turbo-16k",
+                    "gpt-3.5-turbo",
+                    "gpt-4",
+                    "gpt-4-1106-preview",
+                }:
+                    messages = self._generate_prompt_messages(
+                        message, dialog_messages, chat_mode
                     )
-                    answer = r.choices[0].message["content"]
+                    r = await self.aclient.chat.completions.create(
+                        model=self.model, messages=messages, **OPENAI_COMPLETION_OPTIONS
+                    )
+                    answer = r.choices[0].message.content
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r = await openai.Completion.acreate(
-                        engine=self.model,
-                        prompt=prompt,
-                        **OPENAI_COMPLETION_OPTIONS
+                    r = await self.aclient.completions.create(
+                        engine=self.model, prompt=prompt, **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].text
                 else:
                     raise ValueError(f"Unknown model: {self.model}")
 
                 answer = self._postprocess_answer(answer)
-                n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
-            except openai.error.InvalidRequestError as e:  # too many tokens
+                n_input_tokens, n_output_tokens = (
+                    r.usage.prompt_tokens,
+                    r.usage.completion_tokens,
+                )
+            except openai.BadRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
-                    raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
+                    raise ValueError(
+                        "Dialog messages is reduced to zero, but still has too many tokens to make completion"
+                    ) from e
 
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
+        n_first_dialog_messages_removed = n_dialog_messages_before - len(
+            dialog_messages
+        )
 
-        return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+        return (
+            answer,
+            (n_input_tokens, n_output_tokens),
+            n_first_dialog_messages_removed,
+        )
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message_stream(
+        self, message, dialog_messages=[], chat_mode="assistant"
+    ):
         if chat_mode not in config.chat_modes.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -73,13 +92,20 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
-                    messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-                    r_gen = await openai.ChatCompletion.acreate(
+                if self.model in {
+                    "gpt-3.5-turbo-16k",
+                    "gpt-3.5-turbo",
+                    "gpt-4",
+                    "gpt-4-1106-preview",
+                }:
+                    messages = self._generate_prompt_messages(
+                        message, dialog_messages, chat_mode
+                    )
+                    r_gen = await self.aclient.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **OPENAI_COMPLETION_OPTIONS,
                     )
 
                     answer = ""
@@ -87,35 +113,58 @@ class ChatGPT:
                         delta = r_item.choices[0].delta
                         if "content" in delta:
                             answer += delta.content
-                            n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
-                            n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
-                            yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                            (
+                                n_input_tokens,
+                                n_output_tokens,
+                            ) = self._count_tokens_from_messages(
+                                messages, answer, model=self.model
+                            )
+                            n_first_dialog_messages_removed = (
+                                n_dialog_messages_before - len(dialog_messages)
+                            )
+                            yield "not_finished", answer, (
+                                n_input_tokens,
+                                n_output_tokens,
+                            ), n_first_dialog_messages_removed
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r_gen = await openai.Completion.acreate(
+                    r_gen = await self.aclient.completions.create(
                         engine=self.model,
                         prompt=prompt,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **OPENAI_COMPLETION_OPTIONS,
                     )
 
                     answer = ""
                     async for r_item in r_gen:
                         answer += r_item.choices[0].text
-                        n_input_tokens, n_output_tokens = self._count_tokens_from_prompt(prompt, answer, model=self.model)
-                        n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
-                        yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
+                        (
+                            n_input_tokens,
+                            n_output_tokens,
+                        ) = self._count_tokens_from_prompt(
+                            prompt, answer, model=self.model
+                        )
+                        n_first_dialog_messages_removed = (
+                            n_dialog_messages_before - len(dialog_messages)
+                        )
+                        yield "not_finished", answer, (
+                            n_input_tokens,
+                            n_output_tokens,
+                        ), n_first_dialog_messages_removed
 
                 answer = self._postprocess_answer(answer)
 
-            except openai.error.InvalidRequestError as e:  # too many tokens
+            except openai.BadRequestError as e:  # too many tokens
                 if len(dialog_messages) == 0:
                     raise e
 
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
+        yield "finished", answer, (
+            n_input_tokens,
+            n_output_tokens,
+        ), n_first_dialog_messages_removed  # sending final answer
 
     def _generate_prompt(self, message, dialog_messages, chat_mode):
         prompt = config.chat_modes[chat_mode]["prompt_start"]
@@ -153,7 +202,9 @@ class ChatGPT:
         encoding = tiktoken.encoding_for_model(model)
 
         if model == "gpt-3.5-turbo-16k":
-            tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            tokens_per_message = (
+                4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            )
             tokens_per_name = -1  # if there's a name, the role is omitted
         elif model == "gpt-3.5-turbo":
             tokens_per_message = 4
@@ -192,17 +243,22 @@ class ChatGPT:
         return n_input_tokens, n_output_tokens
 
 
+aclient = openai.AsyncOpenAI(api_key=config.openai_api_key)
+if config.openai_api_base is not None:
+    aclient.base_url = config.openai_api_base
+
+
 async def transcribe_audio(audio_file) -> str:
-    r = await openai.Audio.atranscribe("whisper-1", audio_file)
+    r = await aclient.audio.transcribe("whisper-1", audio_file)
     return r["text"] or ""
 
 
 async def generate_images(prompt, n_images=4, size="512x512"):
-    r = await openai.Image.acreate(prompt=prompt, n=n_images, size=size)
+    r = await aclient.images.generate(prompt=prompt, n=n_images, size=size)
     image_urls = [item.url for item in r.data]
     return image_urls
 
 
 async def is_content_acceptable(prompt):
-    r = await openai.Moderation.acreate(input=prompt)
+    r = await aclient.moderations.create(input=prompt)
     return not all(r.results[0].categories.values())

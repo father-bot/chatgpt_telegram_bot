@@ -440,7 +440,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        # message_handle_fn() if not vision model, otherwise _vision_message_handle_fn()
         task = asyncio.create_task(
             _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)
             if current_model == "gpt-4-vision-preview" and update.message.photo is not None and len(update.message.photo) > 0

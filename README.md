@@ -40,17 +40,6 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 
 ---
 
-## 🤑 Payments
-[My bot](https://t.me/chatgpt_karfly_bot) supports many payments providers:
-- 💎 Crypto
-- [Stripe](https://stripe.com)
-- [Smart Glocal](https://smart-glocal.com)
-- [Unlimint](https://www.unlimint.com)
-- [ЮMoney](https://yoomoney.ru)
-- and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
-
-If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)) or Email (kar.iskakov@gmail.com).
-
 ## News
 - *21 Apr 2023*:
     - DALLE 2 support
@@ -116,6 +105,9 @@ You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot
 1. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
 
 1. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+
+## Contributors
+- Main contributor: @karfly
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

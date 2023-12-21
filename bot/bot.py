@@ -494,7 +494,7 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     chat_mode = query.data.split("|")[1]
 
     db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
-    db.start_new_dialog(user_id)
+    db.try_resume_dialog(user_id, chat_mode)
 
     await context.bot.send_message(
         update.callback_query.message.chat.id,
@@ -551,7 +551,6 @@ async def set_settings_handle(update: Update, context: CallbackContext):
 
     _, model_key = query.data.split("|")
     db.set_user_attribute(user_id, "current_model", model_key)
-    db.start_new_dialog(user_id)
 
     text, reply_markup = get_settings_menu(user_id)
     try:

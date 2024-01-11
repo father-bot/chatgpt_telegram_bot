@@ -23,14 +23,15 @@ from telegram.ext import (
     MessageHandler,
     CallbackQueryHandler,
     AIORateLimiter,
-    filters
+    filters,
+    PreCheckoutQueryHandler
 )
 from telegram.constants import ParseMode, ChatAction
 
 import config
 import database
 import openai_utils
-
+from payment import handle_precheckout, handle_payment, get_donate_page, generate_payment
 
 # setup
 db = database.Database()
@@ -687,6 +688,11 @@ def run_bot() -> None:
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
 
+    application.add_handler(PreCheckoutQueryHandler(handle_precheckout))
+    application.add_handler(CallbackQueryHandler(generate_payment, pattern="^generate_payment"))
+    application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, handle_payment))
+    application.add_handler(CommandHandler("donate", get_donate_page, filters=user_filter))
+    
     application.add_error_handler(error_handle)
 
     # start the bot

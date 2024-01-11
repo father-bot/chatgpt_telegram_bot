@@ -1,0 +1,24 @@
+level1:
+  name: "попробовать"
+  description: "попробовать"
+  price: 9900
+  currency: RUB
+  token_amount: 50000
+level2:
+  name: "попользоваться"
+  description: "попользоваться"
+  price: 39900
+  currency: RUB
+  token_amount: 300000
+level3:
+  name: "царь"
+  description: "царь"
+  price: 49900
+  currency: RUB
+  token_amount: 500000
+level4:
+  name: "бог"
+  description: "бог"
+  price: 99900
+  currency: RUB
+  token_amount: 1200000

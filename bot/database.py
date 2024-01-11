@@ -50,7 +50,8 @@ class Database:
             "n_used_tokens": {},
 
             "n_generated_images": 0,
-            "n_transcribed_seconds": 0.0  # voice message transcription
+            "n_transcribed_seconds": 0.0,  # voice message transcription
+            "n_total_tokens": 100
         }
 
         if not self.check_if_user_exists(user_id):

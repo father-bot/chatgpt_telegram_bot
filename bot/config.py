@@ -23,6 +23,11 @@ image_size = config_yaml.get("image_size", "512x512")
 n_chat_modes_per_page = config_yaml.get("n_chat_modes_per_page", 5)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 
+if config_yaml["payment_mode"] == "test":
+  payment_token = config_yaml["payment_token_test"]
+else:
+  payment_token = config_yaml["payment_token_live"]
+
 # chat_modes
 with open(config_dir / "chat_modes.yml", 'r') as f:
     chat_modes = yaml.safe_load(f)
@@ -30,6 +35,10 @@ with open(config_dir / "chat_modes.yml", 'r') as f:
 # models
 with open(config_dir / "models.yml", 'r') as f:
     models = yaml.safe_load(f)
+
+#donate levels
+with open(config_dir / "donates.yml", 'r') as f:
+  donates = yaml.safe_load(f)
 
 # files
 help_group_chat_video_path = Path(__file__).parent.parent.resolve() / "static" / "help_group_chat.mp4"

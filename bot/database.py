@@ -14,6 +14,7 @@ class Database:
 
         self.user_collection = self.db["user"]
         self.dialog_collection = self.db["dialog"]
+        self.buffer_collection = self.db["buffer"]
 
     def check_if_user_exists(self, user_id: int, raise_exception: bool = False):
         if self.user_collection.count_documents({"_id": user_id}) > 0:
@@ -43,6 +44,7 @@ class Database:
             "last_interaction": datetime.now(),
             "first_seen": datetime.now(),
 
+            "current_buffer_setting": False,
             "current_dialog_id": None,
             "current_chat_mode": "assistant",
             "current_model": config.models["available_text_models"][0],
@@ -78,6 +80,9 @@ class Database:
             {"$set": {"current_dialog_id": dialog_id}}
         )
 
+        # clear buffer if any
+        self.buffer_collection.delete_many({"_id": user_id})
+
         return dialog_id
 
     def get_user_attribute(self, user_id: int, key: str):
@@ -106,6 +111,18 @@ class Database:
             }
 
         self.set_user_attribute(user_id, "n_used_tokens", n_used_tokens_dict)
+
+    def set_buffer_message(self, user_id: int, value: Any):
+        self.check_if_user_exists(user_id, raise_exception=True)
+        self.buffer_collection.update_one({"_id": user_id}, {"$set": {"buffer": value}}, upsert=True)
+
+    def get_buffer_message(self, user_id: int):
+        self.check_if_user_exists(user_id, raise_exception=True)
+
+        buffer_dict = self.buffer_collection.find_one({"_id": user_id})
+        if buffer_dict is None or "buffer" not in buffer_dict:
+            return None
+        return buffer_dict["buffer"]
 
     def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
         self.check_if_user_exists(user_id, raise_exception=True)

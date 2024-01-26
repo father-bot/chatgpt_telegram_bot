@@ -4,6 +4,7 @@ import asyncio
 import traceback
 import html
 import json
+from typing import Tuple
 from datetime import datetime
 import openai
 
@@ -31,7 +32,7 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
-from payment import handle_precheckout, handle_payment, get_donate_page, generate_payment
+from payment import handle_precheckout, handle_payment, generate_payment
 
 # setup
 db = database.Database()
@@ -39,31 +40,6 @@ logger = logging.getLogger(__name__)
 
 user_semaphores = {}
 user_tasks = {}
-
-HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
-⚪ /mode – Select chat mode
-⚪ /settings – Show settings
-⚪ /balance – Show balance
-⚪ /help – Show help
-
-🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
-👥 Add bot to <b>group chat</b>: /help_group_chat
-🎤 You can send <b>Voice Messages</b> instead of text
-"""
-
-HELP_GROUP_CHAT_MESSAGE = """You can add bot to any <b>group chat</b> to help and entertain its participants!
-
-Instructions (see <b>video</b> below):
-1. Add the bot to the group chat
-2. Make it an <b>admin</b>, so that it can see messages (all other rights can be restricted)
-3. You're awesome!
-
-To get a reply from the bot in the chat – @ <b>tag</b> it or <b>reply</b> to its message.
-For example: "{bot_username} write a poem about Telegram"
-"""
-
 
 def split_text_into_chunks(text, chunk_size):
     for i in range(0, len(text), chunk_size):
@@ -137,28 +113,9 @@ async def start_handle(update: Update, context: CallbackContext):
     db.start_new_dialog(user_id)
 
     reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with OpenAI API 🤖\n\n"
-    reply_text += HELP_MESSAGE
 
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
-    await show_chat_modes_handle(update, context)
-
-
-async def help_handle(update: Update, context: CallbackContext):
-    await register_user_if_not_exists(update, context, update.message.from_user)
-    user_id = update.message.from_user.id
-    db.set_user_attribute(user_id, "last_interaction", datetime.now())
-    await update.message.reply_text(HELP_MESSAGE, parse_mode=ParseMode.HTML)
-
-
-async def help_group_chat_handle(update: Update, context: CallbackContext):
-     await register_user_if_not_exists(update, context, update.message.from_user)
-     user_id = update.message.from_user.id
-     db.set_user_attribute(user_id, "last_interaction", datetime.now())
-
-     text = HELP_GROUP_CHAT_MESSAGE.format(bot_username="@" + context.bot.username)
-
-     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
-     await update.message.reply_video(config.help_group_chat_video_path)
+    await menu_handle(update, context)
 
 
 async def retry_handle(update: Update, context: CallbackContext):
@@ -414,43 +371,6 @@ async def cancel_handle(update: Update, context: CallbackContext):
         await update.message.reply_text("<i>Nothing to cancel...</i>", parse_mode=ParseMode.HTML)
 
 
-def get_chat_mode_menu(page_index: int):
-    n_chat_modes_per_page = config.n_chat_modes_per_page
-    text = f"Select <b>chat mode</b> ({len(config.chat_modes)} modes available):"
-
-    # buttons
-    chat_mode_keys = list(config.chat_modes.keys())
-    page_chat_mode_keys = chat_mode_keys[page_index * n_chat_modes_per_page:(page_index + 1) * n_chat_modes_per_page]
-
-    keyboard = []
-    for chat_mode_key in page_chat_mode_keys:
-        name = config.chat_modes[chat_mode_key]["name"]
-        keyboard.append([InlineKeyboardButton(name, callback_data=f"set_chat_mode|{chat_mode_key}")])
-
-    # pagination
-    if len(chat_mode_keys) > n_chat_modes_per_page:
-        is_first_page = (page_index == 0)
-        is_last_page = ((page_index + 1) * n_chat_modes_per_page >= len(chat_mode_keys))
-
-        if is_first_page:
-            keyboard.append([
-                InlineKeyboardButton("»", callback_data=f"show_chat_modes|{page_index + 1}")
-            ])
-        elif is_last_page:
-            keyboard.append([
-                InlineKeyboardButton("«", callback_data=f"show_chat_modes|{page_index - 1}"),
-            ])
-        else:
-            keyboard.append([
-                InlineKeyboardButton("«", callback_data=f"show_chat_modes|{page_index - 1}"),
-                InlineKeyboardButton("»", callback_data=f"show_chat_modes|{page_index + 1}")
-            ])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    return text, reply_markup
-
-
 async def show_chat_modes_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
@@ -503,32 +423,6 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     )
 
 
-def get_settings_menu(user_id: int):
-    current_model = db.get_user_attribute(user_id, "current_model")
-    text = config.models["info"][current_model]["description"]
-
-    text += "\n\n"
-    score_dict = config.models["info"][current_model]["scores"]
-    for score_key, score_value in score_dict.items():
-        text += "🟢" * score_value + "⚪️" * (5 - score_value) + f" – {score_key}\n\n"
-
-    text += "\nSelect <b>model</b>:"
-
-    # buttons to choose models
-    buttons = []
-    for model_key in config.models["available_text_models"]:
-        title = config.models["info"][model_key]["name"]
-        if model_key == current_model:
-            title = "✅ " + title
-
-        buttons.append(
-            InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
-        )
-    reply_markup = InlineKeyboardMarkup([buttons])
-
-    return text, reply_markup
-
-
 async def settings_handle(update: Update, context: CallbackContext):
     await register_user_if_not_exists(update, context, update.message.from_user)
     if await is_previous_message_not_answered_yet(update, context): return
@@ -559,10 +453,134 @@ async def set_settings_handle(update: Update, context: CallbackContext):
             pass
 
 
-async def show_balance_handle(update: Update, context: CallbackContext):
-    await register_user_if_not_exists(update, context, update.message.from_user)
+async def edited_message_handle(update: Update, context: CallbackContext):
+    if update.edited_message.chat.type == "private":
+        text = "🥲 Unfortunately, message <b>editing</b> is not supported"
+        await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 
-    user_id = update.message.from_user.id
+async def error_handle(update: Update, context: CallbackContext) -> None:
+    logger.error(msg="Exception while handling an update:", exc_info=context.error)
+
+    try:
+        # collect error message
+        tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+        tb_string = "".join(tb_list)
+        update_str = update.to_dict() if isinstance(update, Update) else str(update)
+        message = (
+            f"An exception was raised while handling an update\n"
+            f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
+            "</pre>\n\n"
+            f"<pre>{html.escape(tb_string)}</pre>"
+        )
+
+        # split text into multiple messages due to 4096 character limit
+        for message_chunk in split_text_into_chunks(message, 4096):
+            try:
+                await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
+            except telegram.error.BadRequest:
+                # answer has invalid characters, so we send it without parse_mode
+                await context.bot.send_message(update.effective_chat.id, message_chunk)
+    except:
+        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
+
+async def post_init(application: Application):
+    await application.bot.set_my_commands([
+        BotCommand("/new", "Start new dialog"),
+        BotCommand("/mode", "Select chat mode"),
+        BotCommand("/retry", "Re-generate response for previous query"),
+        BotCommand("/balance", "Show balance"),
+        BotCommand("/settings", "Show settings"),
+        BotCommand("/help", "Show help message"),
+    ])
+
+
+def get_main_menu() -> Tuple[str, InlineKeyboardMarkup]:
+  text = "Main menu"
+  keyboard = []
+  keyboard.append([InlineKeyboardButton("Chat mode", callback_data="navigate|1")])
+  keyboard.append([InlineKeyboardButton("Settings", callback_data="navigate|2")])
+  keyboard.append([InlineKeyboardButton("Donate", callback_data="navigate|3")])
+  keyboard.append([InlineKeyboardButton("Balance", callback_data="navigate|4")])
+  reply_markup = InlineKeyboardMarkup(keyboard)
+  return text, reply_markup
+
+def get_chat_mode_menu(page_index: int) -> Tuple[str, InlineKeyboardMarkup]:
+    n_chat_modes_per_page = config.n_chat_modes_per_page
+    text = f"Select <b>chat mode</b> ({len(config.chat_modes)} modes available):"
+
+    # buttons
+    chat_mode_keys = list(config.chat_modes.keys())
+    page_chat_mode_keys = chat_mode_keys[page_index * n_chat_modes_per_page:(page_index + 1) * n_chat_modes_per_page]
+
+    keyboard = []
+    for chat_mode_key in page_chat_mode_keys:
+        name = config.chat_modes[chat_mode_key]["name"]
+        keyboard.append([InlineKeyboardButton(name, callback_data=f"set_chat_mode|{chat_mode_key}")])
+
+    # pagination
+    if len(chat_mode_keys) > n_chat_modes_per_page:
+        is_first_page = (page_index == 0)
+        is_last_page = ((page_index + 1) * n_chat_modes_per_page >= len(chat_mode_keys))
+
+        if is_first_page:
+            keyboard.append([
+                InlineKeyboardButton("»", callback_data=f"show_chat_modes|{page_index + 1}")
+            ])
+        elif is_last_page:
+            keyboard.append([
+                InlineKeyboardButton("«", callback_data=f"show_chat_modes|{page_index - 1}"),
+            ])
+        else:
+            keyboard.append([
+                InlineKeyboardButton("«", callback_data=f"show_chat_modes|{page_index - 1}"),
+                InlineKeyboardButton("»", callback_data=f"show_chat_modes|{page_index + 1}")
+            ])
+    keyboard.append([InlineKeyboardButton("« Back", callback_data="navigate|0")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    return text, reply_markup
+
+def get_settings_menu(user_id: int) -> Tuple[str, InlineKeyboardMarkup]:
+    current_model = db.get_user_attribute(user_id, "current_model")
+    text:str = config.models["info"][current_model]["description"]
+    text += "\n\n"
+    score_dict = config.models["info"][current_model]["scores"]
+    for score_key, score_value in score_dict.items():
+        text += "🟢" * score_value + "⚪️" * (5 - score_value) + f" – {score_key}\n\n"
+
+    text += "\nSelect <b>model</b>:"
+
+    # buttons to choose models
+    keyboard = []
+    for model_key in config.models["available_text_models"]:
+        title = config.models["info"][model_key]["name"]
+        if model_key == current_model:
+            title = "✅ " + title
+
+        keyboard.append(
+            InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
+        )
+    keyboard.append(InlineKeyboardButton("« Back", callback_data="navigate|0"))
+    reply_markup = InlineKeyboardMarkup([keyboard])
+
+    return text, reply_markup
+
+def get_donate_menu() -> Tuple[str, InlineKeyboardMarkup]:
+    text = f"""📦 Пакеты Токенов
+⤷ Токены можно использовать в любое время
+⤷ Полезно, когда вам требуется много токенов за раз (например, когда пишете книгу)
+
+Выберите пакет токенов:"""
+    #create a inline button for each donate level
+    keyboard = []
+    for donate in config.donates:
+        name = f"{config.donates[donate]['token_amount']} токенов | {config.donates[donate]['price']} рублей"
+        keyboard.append([InlineKeyboardButton(name, callback_data=f"generate_payment|{donate}")])
+    keyboard.append([InlineKeyboardButton("« Back", callback_data="navigate|0")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return text, reply_markup
+
+def get_balance_menu(user_id):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     # count total usage statistics
@@ -603,50 +621,80 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     text += f"You used <b>{total_n_used_tokens}</b> tokens\n\n"
     text += details_text
 
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+    keyboard = []
+    keyboard.append([InlineKeyboardButton("« Back", callback_data="navigate|0")])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return text, reply_markup
 
+def get_help_menu():
+  text = """Команды:
+⚪ /retry – Перегенерировать последний ответ бота
+⚪ /new – Начать новый диалог
+⚪ /mode – Выбрать режим чата
+⚪ /settings – Показать настройки
+⚪ /balance – Показать баланс
+⚪ /help – Показать справку
 
-async def edited_message_handle(update: Update, context: CallbackContext):
-    if update.edited_message.chat.type == "private":
-        text = "🥲 Unfortunately, message <b>editing</b> is not supported"
-        await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
+🎨 Генерация изображений по текстовым подсказкам в режиме <b>👩‍🎨 Художник</b>
+👥 Добавить бота в <b>групповой чат</b>: /help_group_chat
+🎤 Вы можете отправлять <b>голосовые сообщения</b> вместо текста
+"""
+  keyboard = []
+  keyboard.append([InlineKeyboardButton("« Back", callback_data="navigate|0")])
+  reply_markup = InlineKeyboardMarkup(keyboard)
+  return text, reply_markup
+  
+def get_page(page_index: int, user_id: int) -> Tuple[str, InlineKeyboardMarkup]:
+  if page_index == 0:
+    return get_main_menu()
+  elif page_index == 1:
+    text, keyboard = get_chat_mode_menu(0)
+  elif page_index == 2:
+    text, keyboard = get_settings_menu(user_id)
+  elif page_index == 3:
+    text, keyboard = get_donate_menu()
+  elif page_index == 4:
+    text, keyboard = get_balance_menu(user_id)
+  else:
+    text, keyboard = get_main_menu()
+  return text, keyboard
+  
+async def navigation_handle(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user_id = query.from_user.id
+    await register_user_if_not_exists(update, context, query.from_user)
+    await query.answer()
 
+    page_index = int(query.data.split("|")[1])
+    if page_index < 0:
+        return
 
-async def error_handle(update: Update, context: CallbackContext) -> None:
-    logger.error(msg="Exception while handling an update:", exc_info=context.error)
-
+    text, reply_markup = get_page(page_index, user_id)
+    
     try:
-        # collect error message
-        tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
-        tb_string = "".join(tb_list)
-        update_str = update.to_dict() if isinstance(update, Update) else str(update)
-        message = (
-            f"An exception was raised while handling an update\n"
-            f"<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}"
-            "</pre>\n\n"
-            f"<pre>{html.escape(tb_string)}</pre>"
-        )
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    except telegram.error.BadRequest as e:
+        if str(e).startswith("Message is not modified"):
+            pass
 
-        # split text into multiple messages due to 4096 character limit
-        for message_chunk in split_text_into_chunks(message, 4096):
-            try:
-                await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
-            except telegram.error.BadRequest:
-                # answer has invalid characters, so we send it without parse_mode
-                await context.bot.send_message(update.effective_chat.id, message_chunk)
-    except:
-        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
+async def menu_handle(update: Update, context: CallbackContext):
+  register_user_if_not_exists(update, context, update.message.from_user)
+  text, keyboard = get_main_menu()
+  await update.message.reply_html(text, reply_markup=keyboard)
 
-async def post_init(application: Application):
-    await application.bot.set_my_commands([
-        BotCommand("/new", "Start new dialog"),
-        BotCommand("/mode", "Select chat mode"),
-        BotCommand("/retry", "Re-generate response for previous query"),
-        BotCommand("/balance", "Show balance"),
-        BotCommand("/settings", "Show settings"),
-        BotCommand("/help", "Show help message"),
-    ])
+async def balance_handle(update: Update, context: CallbackContext):
+  register_user_if_not_exists(update, context, update.message.from_user)
+  text, keyboard = get_balance_menu(update.message.from_user.id)
+  await update.message.reply_html(text, reply_markup=keyboard)
+  
+async def help_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    text, keyboard = get_help_menu()
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
+  
 def run_bot() -> None:
     application = (
         ApplicationBuilder()
@@ -668,30 +716,30 @@ def run_bot() -> None:
         group_ids = [x for x in any_ids if x < 0]
         user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
+    #gpt flow handlers
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
-    application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
-    application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
-
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
     application.add_handler(CommandHandler("cancel", cancel_handle, filters=user_filter))
-
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
 
-    application.add_handler(CommandHandler("mode", show_chat_modes_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(show_chat_modes_callback_handle, pattern="^show_chat_modes"))
+    
+    #setters commands
     application.add_handler(CallbackQueryHandler(set_chat_mode_handle, pattern="^set_chat_mode"))
-
-    application.add_handler(CommandHandler("settings", settings_handle, filters=user_filter))
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
-    application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+    #navigation
+    application.add_handler(CommandHandler("menu", menu_handle, filters=user_filter))
+    application.add_handler(CommandHandler("balance", balance_handle, filters=user_filter))
+    application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
+    application.add_handler(CallbackQueryHandler(navigation_handle, pattern="^navigate"))
 
+    #donate
     application.add_handler(PreCheckoutQueryHandler(handle_precheckout))
     application.add_handler(CallbackQueryHandler(generate_payment, pattern="^generate_payment"))
     application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, handle_payment))
-    application.add_handler(CommandHandler("donate", get_donate_page, filters=user_filter))
     
     application.add_error_handler(error_handle)
 

@@ -9,21 +9,9 @@ from config import donates
 db = Database()
 
 #grab donate levels from donates.yml
-async def get_donate_page(update:Update, context: CallbackContext):
-    text = f"""📦 Пакет Токенов
-⤷ Токены можно использовать в любое время
-⤷ Полезно, когда вам требуется много токенов за раз (например, когда пишете книгу)
-
-Выберите пакет токенов:"""
-    #create a inline button for each donate level
-    keyboard = []
-    for donate in donates:
-        name = f"{donates[donate]['name']} токенов | {donates[donate]['price']} рублей"
-        keyboard.append([InlineKeyboardButton(name, callback_data=f"generate_payment|{donate}")])
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def generate_payment(update: Update, context: CallbackContext):
+  update.callback_query.answer()
   donate_level = update.callback_query.data.split("|")[1]
   donate = donates[donate_level]
   await send_payment_message(
@@ -33,7 +21,7 @@ async def generate_payment(update: Update, context: CallbackContext):
     donate["description"], 
     donate_level, 
     donate["name"], 
-    donate["price"]
+    donate["price"]*100
     )
 
 async def send_payment_message(update: Update, context: CallbackContext, title, description, payload, name, price):

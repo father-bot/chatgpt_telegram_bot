@@ -78,7 +78,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
     ```
 
 ## ❤️ Top donations
-You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
+You can be in this list:
 
 1. [LilRocco](https://t.me/LilRocco). Donation: **11000$** (!!!)
 

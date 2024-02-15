@@ -633,8 +633,8 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
             except telegram.error.BadRequest:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
-    except:
-        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
+    except Exception as e:
+        await context.bot.send_message(update.effective_chat.id, f"{e.__class__.__name__} failure in error handler")
 
 async def post_init(application: Application):
     await application.bot.set_my_commands([

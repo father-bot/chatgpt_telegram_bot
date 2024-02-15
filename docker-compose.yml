@@ -13,7 +13,7 @@ services:
 
   chatgpt_telegram_bot:
     container_name: chatgpt_telegram_bot
-    command: python3 bot/bot.py
+    command: python bot/bot.py
     build:
       context: "."
       dockerfile: Dockerfile

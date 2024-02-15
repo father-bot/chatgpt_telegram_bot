@@ -130,7 +130,7 @@ dmypy.json
 
 # Custom
 config/config.yml
-config/config.env
+config/config.envg
 
 docker-compose.dev.yml
 

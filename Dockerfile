@@ -1,23 +1,33 @@
-FROM python:3.8-slim
+FROM python:3.8-slim as dependencies
 
-RUN \
-    set -eux; \
-    apt-get update; \
-    DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
-    python3-pip \
-    build-essential \
-    python3-venv \
-    ffmpeg \
-    git \
-    ; \
-    rm -rf /var/lib/apt/lists/*
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONHASHSEED=random
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PIP_NO_CACHE_DIR=off
+ENV PIP_DISABLE_PIP_VERSION_CHECK=on
+ENV PIP_DEFAULT_TIMEOUT=100
 
-RUN pip3 install -U pip && pip3 install -U wheel && pip3 install -U setuptools==59.5.0
-COPY ./requirements.txt /tmp/requirements.txt
-RUN pip3 install -r /tmp/requirements.txt && rm -r /tmp/requirements.txt
+RUN apt-get update && \
+    apt-get install -y build-essential
 
-COPY . /code
-WORKDIR /code
 
-CMD ["bash"]
+COPY requirements.txt /
+WORKDIR /dependencies
 
+RUN pip3 install --target=/dependencies -r /requirements.txt
+
+
+FROM python:3.8-slim as final
+
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONHASHSEED=random
+ENV PYTHONPATH="${PYTHONPATH}:/dependencies"
+
+WORKDIR /app
+
+COPY --from=dependencies /dependencies /dependencies
+COPY . .
+
+ENTRYPOINT ["python3", "bot/bot.py"]

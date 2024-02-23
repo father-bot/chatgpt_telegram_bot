@@ -59,6 +59,8 @@ class Database:
     def start_new_dialog(self, user_id: int):
         self.check_if_user_exists(user_id, raise_exception=True)
 
+        self.__remove_current_dialog(user_id)
+        
         dialog_id = str(uuid.uuid4())
         dialog_dict = {
             "_id": dialog_id,
@@ -126,3 +128,81 @@ class Database:
             {"_id": dialog_id, "user_id": user_id},
             {"$set": {"messages": dialog_messages}}
         )
+
+    def __remove_current_dialog(self, user_id: int, ) -> None:
+        """
+        Removes the current dialog for the user
+
+        Args:
+            user_id (int): user identifier
+            
+        Notes:
+            User's current_dialog_id is set to None, make sure you call `start_new_session` after this.
+            
+            If you want to completely remove all the dialogs, use `remove_all_dialogs` instead. 
+            
+        Side Effects:
+            User's current_dialog_id is set to None.
+        """
+        self.check_if_user_exists(user_id, raise_exception=True)
+
+        dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
+        self.set_user_attribute(user_id, "current_dialog_id", None)
+        
+        if dialog_id is None:
+            return
+        self.dialog_collection.delete_one({"_id": dialog_id})
+
+    def remove_all_dialogs(self, user_id: int):
+        """
+        Removes all dialogs for the user
+
+        Args:
+            user_id (int): user identifier
+            
+        Notes:
+            User's current_dialog_id is set to None, make sure you call `start_new_session` after this.
+            
+        """
+        result = self.dialog_collection.delete_many({"user_id": user_id})
+        print(f"Deleted: {result.deleted_count} dialogs")
+        self.set_user_attribute(user_id, "current_dialog_id", None)
+    
+    
+    def try_resume_dialog(self, user_id: int, current_chat_mode: str = None) -> str:
+        """
+        Try to resume an existing dialog for the user
+        
+        Args:
+            user_id (int): user identifier
+            current_chat_mode (str, optional): the selected chat mode Defaults to None.
+
+        Returns:
+            str: currrent_dialog_id
+            
+        Notes:
+            This function is called when the user switch between modes. If cannot find existing dialog, create a new one.
+        """
+        self.check_if_user_exists(user_id, raise_exception=True)
+        if current_chat_mode is None:
+            current_chat_mode = self.get_user_attribute(user_id, "chat_mode")
+        # 
+        """
+        Get dialog_id of the most recent dialog
+
+        Notes:
+            `sort` and `limit` are used to support old project with tons of unremoved dialogs in the DB.
+        """
+        dialog_ids = self.dialog_collection.find(
+                filter={"user_id": user_id, "chat_mode": current_chat_mode},
+                projection={"_id": 1},
+            ).sort("start_time", -1).limit(1)
+        
+        if dialog_ids is not None:
+            return self.start_new_dialog(user_id)
+        latest_relevant_dialog_id = dialog_ids[0]
+        cid = latest_relevant_dialog_id['_id']
+        self.set_user_attribute(
+            user_id, "current_dialog_id", cid
+        )
+        return cid

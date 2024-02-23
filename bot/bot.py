@@ -611,6 +611,24 @@ async def edited_message_handle(update: Update, context: CallbackContext):
         await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
+async def unauthorized_access(update: Update, context: CallbackContext) -> None:
+    # Check if the bot was mentioned (for group chats)
+    if not await is_bot_mentioned(update, context):
+        return
+
+    # For non-private (group) chats
+    if update.message.chat.type != "private":
+        await update.message.reply_text(
+            f"🔒 This group is not on the allowed list. Please contact the <b>owner</b> to gain access and send your group ID {update.message.chat_id}.", 
+            parse_mode=ParseMode.HTML
+        )
+    else:  # For private chats
+        await update.message.reply_text(
+            f"🔒 You are not on the allowed list. Please contact the <b>owner</b> to gain access and send your user ID {update.message.from_user.id}.", 
+            parse_mode=ParseMode.HTML
+        )
+
+
 async def error_handle(update: Update, context: CallbackContext) -> None:
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
@@ -686,7 +704,9 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
-
+    # Logical for answer in chat and groups witch is not allowed
+    application.add_handler(MessageHandler(filters.ALL & ~user_filter, unauthorized_access))
+    
     application.add_error_handler(error_handle)
 
     # start the bot

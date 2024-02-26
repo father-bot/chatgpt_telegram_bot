@@ -22,7 +22,7 @@ OPENAI_COMPLETION_OPTIONS = {
 
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
-        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4"}, f"Unknown model: {model}"
+        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}, f"Unknown model: {model}"
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
@@ -33,7 +33,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -73,7 +73,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
                     r_gen = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -161,6 +161,9 @@ class ChatGPT:
         elif model == "gpt-4":
             tokens_per_message = 3
             tokens_per_name = 1
+        elif model == "gpt-4-1106-preview":
+            tokens_per_message = 3
+            tokens_per_name = 1
         else:
             raise ValueError(f"Unknown model: {model}")
 
@@ -189,13 +192,13 @@ class ChatGPT:
         return n_input_tokens, n_output_tokens
 
 
-async def transcribe_audio(audio_file):
+async def transcribe_audio(audio_file) -> str:
     r = await openai.Audio.atranscribe("whisper-1", audio_file)
-    return r["text"]
+    return r["text"] or ""
 
 
-async def generate_images(prompt, n_images=4):
-    r = await openai.Image.acreate(prompt=prompt, n=n_images, size="512x512")
+async def generate_images(prompt, n_images=4, size="512x512"):
+    r = await openai.Image.acreate(prompt=prompt, n=n_images, size=size)
     image_urls = [item.url for item in r.data]
     return image_urls
 

@@ -24,7 +24,7 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 - Low latency replies (it usually takes about 3-5 seconds)
 - No request limits
 - Message streaming (watch demo)
-- GPT-4 support
+- GPT-4 and GPT-4 Turbo support
 - Group Chat support (/help_group_chat to get instructions)
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
 - Voice message recognition
@@ -40,17 +40,6 @@ You can deploy your own bot, or use mine: [@chatgpt_karfly_bot](https://t.me/cha
 
 ---
 
-## 🤑 Payments
-[My bot](https://t.me/chatgpt_karfly_bot) supports many payments providers:
-- 💎 Crypto
-- [Stripe](https://stripe.com)
-- [Smart Glocal](https://smart-glocal.com)
-- [Unlimint](https://www.unlimint.com)
-- [ЮMoney](https://yoomoney.ru)
-- and [many-many other](https://core.telegram.org/bots/payments#supported-payment-providers)
-
-If you want to add payments to your bot and create profitable business – write me on Telegram ([@karfly](https://t.me/karfly)).
-
 ## News
 - *21 Apr 2023*:
     - DALLE 2 support
@@ -62,6 +51,7 @@ If you want to add payments to your bot and create profitable business – write
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
 - *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
+- *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer
@@ -88,9 +78,9 @@ If you want to add payments to your bot and create profitable business – write
     ```
 
 ## ❤️ Top donations
-You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot/blob/main/static/donate/donate.md#%EF%B8%8F-donate" alt="Donate shield"><img src="https://img.shields.io/badge/-Donate-red?logo=undertale" /></a>
+You can be in this list:
 
-1. [LilRocco](https://t.me/LilRocco). Donation: **1000$** (!!!)
+1. [LilRocco](https://t.me/LilRocco). Donation: **11000$** (!!!)
 
 1. [Mr V](https://t.me/mr_v_v_v). Donation **250$**
 
@@ -115,6 +105,10 @@ You can be in this list: <a href="https://github.com/karfly/chatgpt_telegram_bot
 1. [Kbaji20](https://t.me/Kbaji20). Donation: **30$**
 
 1. [Hans Blinken](https://t.me/hblink). Donation: **10$**
+
+## Contributors
+- Main contributor: @karfly
+- [Father.Bot](https://father.bot).
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

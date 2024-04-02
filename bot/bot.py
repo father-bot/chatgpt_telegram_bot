@@ -271,7 +271,7 @@ async def _vision_message_handle_fn(
                 (n_input_tokens, n_output_tokens),
                 n_first_dialog_messages_removed,
             ) = gen_item
-            answer = current_model + " " + answer
+
             answer = answer[:4096]  # telegram message limit
 
             # update only when 100 new symbols are ready
@@ -416,7 +416,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             
             async for gen_item in gen:
                 status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
-                answer = current_model + " " + answer
+
                 answer = answer[:4096]  # telegram message limit
                     
                 # update only when 100 new symbols are ready

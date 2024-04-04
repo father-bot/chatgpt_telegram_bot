@@ -218,17 +218,10 @@ async def _vision_message_handle_fn(
     try:
         # send placeholder message to user
         placeholder_message = await update.message.reply_text("...")
-        message = update.message.caption or update.message.text
+        message = update.message.caption or update.message.text or ''
 
         # send typing action
         await update.message.chat.send_action(action="typing")
-
-        if message is None or len(message) == 0:
-            await update.message.reply_text(
-                "🥲 You sent <b>empty message</b>. Please, try again!",
-                parse_mode=ParseMode.HTML,
-            )
-            return
 
         dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
         parse_mode = {"html": ParseMode.HTML, "markdown": ParseMode.MARKDOWN}[

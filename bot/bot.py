@@ -6,6 +6,7 @@ import html
 import json
 from datetime import datetime
 import openai
+from langchain_openai import OpenAI
 
 import telegram
 from telegram import (
@@ -308,7 +309,7 @@ async def _vision_message_handle_fn(
                 , "bot": answer, "date": datetime.now()}
         else:
             new_dialog_message = {"user": [{"type": "text", "text": message}], "bot": answer, "date": datetime.now()}
-        
+
         db.set_dialog_messages(
             user_id,
             db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
@@ -406,12 +407,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 gen = fake_gen()
 
             prev_answer = ""
-            
+
             async for gen_item in gen:
                 status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
 
                 answer = answer[:4096]  # telegram message limit
-                    
+
                 # update only when 100 new symbols are ready
                 if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                     continue
@@ -425,9 +426,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         await context.bot.edit_message_text(answer, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id)
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
-                
+
                 prev_answer = answer
-            
+
             # update user data
             new_dialog_message = {"user": _message, "bot": answer, "date": datetime.now()}
 
@@ -470,7 +471,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         else:
             task = asyncio.create_task(
                 message_handle_fn()
-            )            
+            )
 
         user_tasks[user_id] = task
 
@@ -511,7 +512,7 @@ async def voice_message_handle(update: Update, context: CallbackContext):
 
     voice = update.message.voice
     voice_file = await context.bot.get_file(voice.file_id)
-    
+
     # store file in memory, not on disk
     buf = io.BytesIO()
     await voice_file.download_to_memory(buf)

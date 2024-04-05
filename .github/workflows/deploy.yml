@@ -1,0 +1,30 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+    - uses: actions/checkout@v3
+
+    - name: Configure YML file
+      run: |
+        tg_token_line='telegram_token: "${{ secrets.TG_BOT_TOKEN }}"'
+        openai_key_line='openai_api_key: "${{ secrets.OPENAI_API_KEY }}"'
+        sed -i'.bak' "1s/.*/$tg_token_line/" config/config.example.yml
+        sed -i'.bak' "2s/.*/$openai_key_line/" config/config.example.yml
+
+    - name: Rename Configuration Files
+      run: |
+        mv config/config.example.yml config/config.yml
+        mv config/config.example.env config/config.env
+
+    - name: Build and Run Docker Compose
+      run: docker-compose --env-file config/config.env up --build

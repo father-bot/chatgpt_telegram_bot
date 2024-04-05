@@ -4,11 +4,12 @@ import config
 import logging
 
 import tiktoken
-from langchain_openai import OpenAI
+# from langchain_openai import ChatOpenAI
+from openai import OpenAI
 
+# setup openai--=
+openai = OpenAI(api_key=config.openai_api_key)
 
-# setup openai
-openai = OpenAI(api_key=config.openai_api_key, api_base=config.openai_api_base)
 logger = logging.getLogger(__name__)
 
 
@@ -38,7 +39,7 @@ class ChatGPT:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r = await openai.create_chat_completion(
+                    r = await openai.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -79,7 +80,7 @@ class ChatGPT:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r_gen = await openai.create_chat_completion(
+                    r_gen = await openai.chat.completion(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -96,7 +97,7 @@ class ChatGPT:
                             n_first_dialog_messages_removed = 0
 
                             yield "not_finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
-                            
+
 
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
@@ -188,7 +189,7 @@ class ChatGPT:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
-                    
+
                     r_gen = await openai.create_chat_completion(
                         model=self.model,
                         messages=messages,
@@ -253,11 +254,11 @@ class ChatGPT:
 
         messages = [{"role": "system", "content": prompt}]
         user_messages = {"role": "user", "content": []}
-        
+
         for dialog_message in dialog_messages:
             user_messages["content"].extend(dialog_message["user"])
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
-            
+
 
         user_messages["content"].append({"type": "text", "text": message})
 

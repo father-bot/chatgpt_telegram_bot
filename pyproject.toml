@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "langchain-telegram-bot"
+version = "0.1.0"
+description = ""
+authors = ["Aleksandr Bobrov <al.bobrov.mail@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-telegram-bot = {extras = ["rate-limiter"], version = "^20.1"}
+tiktoken = "^0.6.0"
+pyyaml = "^6.0.1"
+pymongo = "^4.6.3"
+python-dotenv = "^1.0.1"
+langchain-openai = "^0.1.1"
+openai = "^1.16.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

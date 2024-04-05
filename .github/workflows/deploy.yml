@@ -28,3 +28,5 @@ jobs:
 
     - name: Build and Run Docker Compose
       run: docker-compose --env-file config/config.env up --build
+
+      

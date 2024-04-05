@@ -26,5 +26,11 @@ jobs:
         mv config/config.example.yml config/config.yml
         mv config/config.example.env config/config.env
 
-    - name: Build and Run Docker Compose
-      run: docker-compose --env-file config/config.env up --build
+    - name: Build Docker Compose
+      run: docker-compose --env-file config/config.env build
+
+    - name: Push Docker Image to Repository
+      run: |
+        docker login -u eu-de_POC@${{ secrets.OTC_ACCESS_KEY }} -p {{ secrets.OTC_SECRET }} swr.eu-de.otc.t-systems.com
+        docker tag chatgpt_telegram_bot-chatgpt_telegram_bot:latest swr.eu-de.otc.t-systems.com/linkando/bot:latest
+        docker push swr.eu-de.otc.t-systems.com/linkando/bot:latest

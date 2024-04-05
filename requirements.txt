@@ -1,7 +1,0 @@
-python-telegram-bot[rate-limiter]==20.1
-openai==1.16.2
-tiktoken>=0.3.0
-PyYAML==6.0
-pymongo==4.3.3
-python-dotenv==0.21.0
-langchain-openai==0.1.1

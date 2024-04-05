@@ -1,25 +1,21 @@
-FROM weastur/poetry:latest-python-3.11-slim-bookworm
+FROM python:3.11-slim
 
 RUN \
     set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
+    python3-pip \
     build-essential \
+    python3-venv \
     ffmpeg \
     git \
     ; \
     rm -rf /var/lib/apt/lists/*
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+RUN pip3 install -U pip && pip3 install -U wheel && pip3 install -U setuptools==59.5.0
+COPY ./requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt && rm -r /tmp/requirements.txt
 
-WORKDIR /app
-
-COPY pyproject.toml poetry.lock ./
-
-RUN poetry install --only main --no-root
+WORKDIR /code
 
 CMD ["bash"]
-

@@ -5,10 +5,11 @@ import logging
 
 import tiktoken
 # from langchain_openai import ChatOpenAI
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 # setup openai--=
-openai = OpenAI(api_key=config.openai_api_key)
+openai = AsyncOpenAI(api_key=config.openai_api_key)
+# async_openai = AsyncOpenAI(api_key=config.openai_api_key)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,6 @@ OPENAI_COMPLETION_OPTIONS = {
     "top_p": 1,
     "frequency_penalty": 0,
     "presence_penalty": 0,
-    "request_timeout": 60.0,
 }
 
 
@@ -38,7 +38,7 @@ class ChatGPT:
             try:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
-
+                    logger.info('!!! MESSAGES: ', messages)
                     r = await openai.chat.completions.create(
                         model=self.model,
                         messages=messages,
@@ -58,9 +58,10 @@ class ChatGPT:
 
                 answer = self._postprocess_answer(answer)
                 n_input_tokens, n_output_tokens = r.usage.prompt_tokens, r.usage.completion_tokens
-            except openai.error.InvalidRequestError as e:  # too many tokens
-                if len(dialog_messages) == 0:
-                    raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
+            except Exception as e:  # too many tokens
+                raise e
+                # if len(dialog_messages) == 0:
+                    # raise ValueError("Dialog messages is reduced to zero, but still has too many tokens to make completion") from e
 
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
@@ -80,7 +81,7 @@ class ChatGPT:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r_gen = await openai.chat.completion(
+                    r_gen = await openai.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -91,7 +92,7 @@ class ChatGPT:
                     async for r_item in r_gen:
                         delta = r_item.choices[0].delta
 
-                        if "content" in delta:
+                        if delta.content:
                             answer += delta.content
                             n_input_tokens, n_output_tokens = self._count_tokens_from_messages(messages, answer, model=self.model)
                             n_first_dialog_messages_removed = 0
@@ -117,14 +118,14 @@ class ChatGPT:
 
                 answer = self._postprocess_answer(answer)
 
-            except openai.error.InvalidRequestError as e:  # too many tokens
-                if len(dialog_messages) == 0:
-                    raise e
+            except Exception as e:  # too many tokens
+                # if len(dialog_messages) == 0:
+                dialog_messages = dialog_messages[1:]
+                raise e
 
                 # forget first message in dialog_messages
-                dialog_messages = dialog_messages[1:]
 
-        yield "finished", answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed  # sending final answer
+        yield "finished", answer, (0, 0), n_first_dialog_messages_removed  # sending final answer
 
     async def send_vision_message(
         self,
@@ -155,11 +156,14 @@ class ChatGPT:
                     r.usage.prompt_tokens,
                     r.usage.completion_tokens,
                 )
-            except openai.error.InvalidRequestError as e:  # too many tokens
-                if len(dialog_messages) == 0:
-                    raise ValueError(
-                        "Dialog messages is reduced to zero, but still has too many tokens to make completion"
-                    ) from e
+            except Exception as e:
+                            # except Exception as e:  # too many tokens
+                # if len(dialog_messages) == 0:
+                raise e  # too many tokens
+                # if len(dialog_messages) == 0:
+                #     raise ValueError(
+                #         "Dialog messages is reduced to zero, but still has too many tokens to make completion"
+                #     ) from e
 
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
@@ -218,9 +222,9 @@ class ChatGPT:
 
                 answer = self._postprocess_answer(answer)
 
-            except openai.error.InvalidRequestError as e:  # too many tokens
-                if len(dialog_messages) == 0:
-                    raise e
+            except Exception as e:  # too many tokens
+                # if len(dialog_messages) == 0:
+                raise e
                 # forget first message in dialog_messages
                 dialog_messages = dialog_messages[1:]
 

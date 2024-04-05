@@ -541,7 +541,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
 
     try:
         image_urls = await openai_utils.generate_images(message, n_images=config.return_n_generated_images, size=config.image_size)
-    except OpenAI.error.InvalidRequestError as e:
+    except:
         raise
 
     # token usage

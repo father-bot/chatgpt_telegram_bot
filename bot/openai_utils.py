@@ -4,13 +4,11 @@ import config
 import logging
 
 import tiktoken
-import openai
+from langchain_openai import OpenAI
 
 
 # setup openai
-openai.api_key = config.openai_api_key
-if config.openai_api_base is not None:
-    openai.api_base = config.openai_api_base
+openai = OpenAI(api_key=config.openai_api_key, api_base=config.openai_api_base)
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +38,7 @@ class ChatGPT:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r = await openai.ChatCompletion.acreate(
+                    r = await openai.create_chat_completion(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -48,7 +46,7 @@ class ChatGPT:
                     answer = r.choices[0].message["content"]
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r = await openai.Completion.acreate(
+                    r = await openai.create_completion(
                         engine=self.model,
                         prompt=prompt,
                         **OPENAI_COMPLETION_OPTIONS
@@ -81,7 +79,7 @@ class ChatGPT:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r_gen = await openai.ChatCompletion.acreate(
+                    r_gen = await openai.create_chat_completion(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -102,7 +100,7 @@ class ChatGPT:
 
                 elif self.model == "text-davinci-003":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r_gen = await openai.Completion.acreate(
+                    r_gen = await openai.create_completion(
                         engine=self.model,
                         prompt=prompt,
                         stream=True,
@@ -142,7 +140,7 @@ class ChatGPT:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
-                    r = await openai.ChatCompletion.acreate(
+                    r = await openai.create_chat_completion(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -191,7 +189,7 @@ class ChatGPT:
                         message, dialog_messages, chat_mode, image_buffer
                     )
                     
-                    r_gen = await openai.ChatCompletion.acreate(
+                    r_gen = await openai.create_chat_completion(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -335,16 +333,16 @@ class ChatGPT:
 
 
 async def transcribe_audio(audio_file) -> str:
-    r = await openai.Audio.atranscribe("whisper-1", audio_file)
+    r = await openai.transcribe_audio("whisper-1", audio_file)
     return r["text"] or ""
 
 
 async def generate_images(prompt, n_images=4, size="512x512"):
-    r = await openai.Image.acreate(prompt=prompt, n=n_images, size=size)
+    r = await openai.create_image(prompt=prompt, n=n_images, size=size)
     image_urls = [item.url for item in r.data]
     return image_urls
 
 
 async def is_content_acceptable(prompt):
-    r = await openai.Moderation.acreate(input=prompt)
+    r = await openai.create_moderation(input=prompt)
     return not all(r.results[0].categories.values())

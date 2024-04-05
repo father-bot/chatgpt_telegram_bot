@@ -32,5 +32,6 @@ jobs:
     - name: Push Docker Image to Repository
       run: |
         docker login -u eu-de_POC@${{ secrets.OTC_ACCESS_KEY }} -p ${{ secrets.OTC_SECRET }} swr.eu-de.otc.t-systems.com
+        docker image ls
         docker tag chatgpt_telegram_bot-chatgpt_telegram_bot:latest swr.eu-de.otc.t-systems.com/linkando/bot:latest
         docker push swr.eu-de.otc.t-systems.com/linkando/bot:latest

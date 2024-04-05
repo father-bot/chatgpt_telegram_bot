@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "deploy" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "deploy" ]
 
 jobs:
   build-and-deploy:
@@ -28,5 +28,3 @@ jobs:
 
     - name: Build and Run Docker Compose
       run: docker-compose --env-file config/config.env up --build
-
-      

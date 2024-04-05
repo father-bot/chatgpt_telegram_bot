@@ -5,7 +5,6 @@ import traceback
 import html
 import json
 from datetime import datetime
-import openai
 from langchain_openai import OpenAI
 
 import telegram

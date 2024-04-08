@@ -30,7 +30,7 @@ from telegram.constants import ParseMode, ChatAction
 import config
 import database
 import openai_utils
-from bot.assistant import AgentChatGPT
+from assistant import AgentChatGPT
 
 import base64
 

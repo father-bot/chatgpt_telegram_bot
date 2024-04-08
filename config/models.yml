@@ -1,6 +1,19 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "text-davinci-003"]
+available_text_models: ["open-ai-assistant", "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "text-davinci-003"]
 
 info:
+  open-ai-assistant:
+    type: assistant
+    name: OpenAI assistant
+    description: OpenAI assistant
+
+    price_per_1000_input_tokens: 0.0015
+    price_per_1000_output_tokens: 0.002
+
+    scores:
+      Smart: 3
+      Fast: 5
+      Cheap: 5
+
   gpt-3.5-turbo:
     type: chat_completion
     name: ChatGPT

@@ -136,3 +136,4 @@ docker-compose.dev.yml
 
 mongodb/
 .aider*
+.DS_Store

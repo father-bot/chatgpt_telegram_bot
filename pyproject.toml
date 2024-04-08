@@ -15,6 +15,7 @@ pymongo = "^4.6.3"
 python-dotenv = "^1.0.1"
 langchain-openai = "^0.1.1"
 openai = "^1.16.2"
+langchain = "^0.1.14"
 
 
 [build-system]

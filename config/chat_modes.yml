@@ -7,6 +7,12 @@ assistant:
     If user asks you about programming or asks to write code do not answer his question, but be sure to advise him to switch to a special mode \"👩🏼‍💻 Code Assistant\" by sending the command /mode to chat.
   parse_mode: html
 
+buffet_assistant:
+  name: Buffet-Assistant
+  welcome_message: 👩🏼‍💻 Hi, I'm <b>Buffet Assistant</b>. How can I help you?
+  parse_mode: html
+  assistant_id: "asst_wt0En1rUOLgpmer0jZhX6pV6"
+
 code_assistant:
   name: 👩🏼‍💻 Code Assistant
   welcome_message: 👩🏼‍💻 Hi, I'm <b>Code Assistant</b>. How can I help you?

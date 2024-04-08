@@ -45,7 +45,7 @@ class ChatGPT:
                         **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].message["content"]
-                elif self.model == "text-davinci-003":
+                elif self.model == "openai-assistant":
                     prompt = self._generate_prompt(message, dialog_messages, chat_mode)
                     r = await openai.create_completion(
                         engine=self.model,

@@ -11,8 +11,8 @@ services:
       - ${MONGODB_PATH:-./mongodb}:/data/db
     # TODO: add auth
 
-  chatgpt_telegram_bot:
-    container_name: chatgpt_telegram_bot
+  bot:
+    container_name: chatgpt_bot
     restart: always
     build:
       context: "."

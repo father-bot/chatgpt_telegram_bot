@@ -4,6 +4,7 @@ import asyncio
 import traceback
 import html
 import json
+import traceback
 from datetime import datetime
 # from langchain_openai import OpenAI
 
@@ -325,7 +326,7 @@ async def _vision_message_handle_fn(
 
     except Exception as e:
         error_text = f"Something went wrong during completion. Reason: {e}"
-        logger.error(error_text)
+        logger.error(traceback.format_exc())
         await update.message.reply_text(error_text)
         return
 
@@ -392,6 +393,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             }[config.chat_modes[chat_mode]["parse_mode"]]
 
             chatgpt_instance = AgentChatGPT(model=current_model)
+            logger.info('!!! config.enable_message_streaming: ', config.enable_message_streaming)
             if config.enable_message_streaming:
                 gen = chatgpt_instance.send_message_stream(_message, dialog_messages=dialog_messages, chat_mode=chat_mode)
             else:
@@ -447,7 +449,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
-            logger.error(error_text)
+            logger.error(traceback.format_exc())
+            # logger.error(error_text)
             await update.message.reply_text(error_text)
             return
 

@@ -254,25 +254,23 @@ class ChatGPT:
         prompt = config.chat_modes[chat_mode]["prompt_start"]
 
         messages = [{"role": "system", "content": prompt}]
-        user_messages = {"role": "user", "content": []}
         
         for dialog_message in dialog_messages:
-            user_messages["content"].extend(dialog_message["user"])
+            messages.append({"role": "user", "content": dialog_message["user"]})
             messages.append({"role": "assistant", "content": dialog_message["bot"]})
             
 
-        user_messages["content"].append({"type": "text", "text": message})
+        messages.append({"role": "user", "content": [{"type": "text", "text": message}]})
 
         if image_buffer is not None:
-            user_messages["content"].append(
+            messages[-1]["content"].append(
                 {
                     "type": "image",
                     "image": self._encode_image(image_buffer),
                 }
             )
 
-        response = messages + ([user_messages] if len(user_messages["content"]) > 0 else [])
-        return response
+        return messages
 
     def _postprocess_answer(self, answer):
         answer = answer.strip()

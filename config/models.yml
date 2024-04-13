@@ -1,4 +1,4 @@
-available_text_models: ["gpt-4-turbo", "gpt-4-1106-preview", "gpt-4"]
+available_text_models: ["gpt-4-1106-preview", "gpt-4-turbo", "gpt-4"]
 
 info:
   gpt-4-turbo:

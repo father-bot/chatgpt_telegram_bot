@@ -39,3 +39,37 @@ info:
       smart: 5
       fast: 4
       cheap: 3
+
+  gpt-4-vision-preview:
+    type: chat_completion
+    name: GPT-4 Vision
+    description: Ability to <b>understand images</b>, in addition to all other GPT-4 Turbo capabilties.
+
+    price_per_1000_input_tokens: 0.01
+    price_per_1000_output_tokens: 0.03
+
+    scores:
+      smart: 5
+      fast: 4
+      cheap: 3
+
+  text-davinci-003:
+    type: completion
+    name: GPT-3.5
+    description: GPT-3.5 is a legacy model. Actually there is <b>no reason to use it</b>, because it is more expensive and slower than ChatGPT, but just about as smart.
+
+    price_per_1000_input_tokens: 0.02
+    price_per_1000_output_tokens: 0.02
+
+    scores:
+      Smart: 3
+      Fast: 2
+      Cheap: 3
+
+  dalle-2:
+     type: image
+     price_per_1_image: 0.018  # 512x512
+
+  whisper:
+    type: audio
+    price_per_1_min: 0.006

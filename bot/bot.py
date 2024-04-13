@@ -40,12 +40,13 @@ user_semaphores = {}
 user_tasks = {}
 
 HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
-⚪ /mode – Select chat mode
-⚪ /settings – Show settings
-⚪ /balance – Show balance
-⚪ /help – Show help
+⚪ /retry – Повторить запрос
+⚪ /new – Новый диалог
+⚪ /mode – Режим
+⚪ /settings – Настройки
+⚪ /balance – Баланс
+⚪ /help – Помощь
+
 
 🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
 👥 Add bot to <b>group chat</b>: /help_group_chat
@@ -209,7 +210,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         if use_new_dialog_timeout:
             if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
-                await update.message.reply_text(f"Starting new dialog due to timeout (<b>{config.chat_modes[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
+                await update.message.reply_text(f"Запуск нового диалога в связи с таймаутом (<b>{config.chat_modes[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
         # in case of CancelledError
@@ -286,7 +287,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             raise
 
         except Exception as e:
-            error_text = f"Something went wrong during completion. Reason: {e}"
+            error_text = f"Что-то пошло не так с запросом к GPT: {e}"
             logger.error(error_text)
             await update.message.reply_text(error_text)
             return
@@ -319,8 +320,8 @@ async def is_previous_message_not_answered_yet(update: Update, context: Callback
 
     user_id = update.message.from_user.id
     if user_semaphores[user_id].locked():
-        text = "⏳ Please <b>wait</b> for a reply to the previous message\n"
-        text += "Or you can /cancel it"
+        text = "⏳ Пожалуйста <b>дождись</b> ответа на предыдущее сообщение\n"
+        text += "Или отмени его командой /cancel"
         await update.message.reply_text(text, reply_to_message_id=update.message.id, parse_mode=ParseMode.HTML)
         return True
     else:
@@ -634,16 +635,16 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
     except:
-        await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
+        await context.bot.send_message(update.effective_chat.id, "Ошибка в обработчике ошибок")
 
 async def post_init(application: Application):
     await application.bot.set_my_commands([
-        BotCommand("/new", "Start new dialog"),
-        BotCommand("/mode", "Select chat mode"),
-        BotCommand("/retry", "Re-generate response for previous query"),
-        BotCommand("/balance", "Show balance"),
-        BotCommand("/settings", "Show settings"),
-        BotCommand("/help", "Show help message"),
+        BotCommand("/new", "Новый диалог"),
+        BotCommand("/mode", "Сменить режим"),
+        BotCommand("/retry", "Повторить запрос"),
+        BotCommand("/balance", "Показать баланс"),
+        BotCommand("/settings", "Настройки"),
+        BotCommand("/help", "Помощь"),
     ])
 
 def run_bot() -> None:

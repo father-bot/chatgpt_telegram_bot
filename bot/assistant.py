@@ -29,7 +29,7 @@ OPENAI_COMPLETION_OPTIONS = {
 }
 
 class AgentChatGPT(ChatGPT):
-    def __init__(self, model="gpt-3.5-turbo"):
+    def __init__(self, model="open-ai-assistant"):
         assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview", "open-ai-assistant"}, f"Unknown model: {model}"
         self.model = model
 
@@ -39,7 +39,7 @@ class AgentChatGPT(ChatGPT):
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
-        logger.info('!!! chat_mode: ', chat_mode)
+        logger.debug(f"!!! chat_mode: {chat_mode}")
         while answer is None:
             try:
                 if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}:

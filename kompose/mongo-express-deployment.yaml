@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: mongo-express
+  name: mongo-express
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mongo-express
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/chatgpt-telegram-bot-1-default: "true"
+        io.kompose.service: mongo-express
+    spec:
+      containers:
+        - env:
+            - name: ME_CONFIG_BASICAUTH_PASSWORD
+              value: password
+            - name: ME_CONFIG_BASICAUTH_USERNAME
+              value: username
+            - name: ME_CONFIG_MONGODB_AUTH_DATABASE
+              value: chatgpt_telegram_bot
+            - name: ME_CONFIG_MONGODB_ENABLE_ADMIN
+              value: "false"
+            - name: ME_CONFIG_MONGODB_PORT
+              value: "27017"
+            - name: ME_CONFIG_MONGODB_SERVER
+              value: mongo
+          image: 100.125.7.25:20202/linkando/mongo-express:latest
+          name: mongo-express
+          ports:
+            - containerPort: 8081
+              hostIP: 127.0.0.1
+              hostPort: 8081
+              protocol: TCP
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: default-secret

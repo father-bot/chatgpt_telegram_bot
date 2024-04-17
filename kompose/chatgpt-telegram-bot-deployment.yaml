@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: chatgpt-telegram-bot
+  name: chatgpt-telegram-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: chatgpt-telegram-bot
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/chatgpt-telegram-bot-1-default: "true"
+        io.kompose.service: chatgpt-telegram-bot
+    spec:
+      containers:
+        - args:
+            - python3
+            - bot/bot.py
+          image: 100.125.7.25:20202/linkando/bot:latest
+          name: chatgpt-telegram-bot
+      imagePullSecrets:
+        - name: default-secret
+      restartPolicy: Always

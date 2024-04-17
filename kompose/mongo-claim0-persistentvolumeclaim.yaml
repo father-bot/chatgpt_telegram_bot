@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    everest.io/enterprise-project-id: "0"
+    everest.io/disk-mode: "SCSI"
+    everest.io/disk-volume-type: "SATA"
+  labels:
+    io.kompose.service: mongo-claim0
+    failure-domain.beta.kubernetes.io/region: eu-de
+    failure-domain.beta.kubernetes.io/zone: eu-de-01
+  name: mongo-claim0
+spec:
+  volumeName: pv-evs-mongo
+  storageClassName: csi-disk
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

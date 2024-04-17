@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: mongo
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mongo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/chatgpt-telegram-bot-1-default: "true"
+        io.kompose.service: mongo
+    spec:
+      containers:
+        - image: 100.125.7.25:20202/linkando/mongo:latest
+          name: mongo
+          ports:
+            - containerPort: 27017
+              hostIP: 127.0.0.1
+              hostPort: 27017
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongo-claim0
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: default-secret
+      volumes:
+        - name: mongo-claim0
+          persistentVolumeClaim:
+            claimName: mongo-claim0

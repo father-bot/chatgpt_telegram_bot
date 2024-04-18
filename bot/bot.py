@@ -51,15 +51,15 @@ HELP_MESSAGE = """Команды:
 🎤 Вы можете отправлять <b>голосовые сообщения</b> вместо текста
 """
 
-HELP_GROUP_CHAT_MESSAGE = """You can add bot to any <b>group chat</b> to help and entertain its participants!
+HELP_GROUP_CHAT_MESSAGE = """Вы можете добавить бота в любой <b>групповой чат</b>, чтобы помогать и развлекать его участников!
 
-Instructions (see <b>video</b> below):
+Инструкции (см. <b>видео</b> ниже):
 1. Add the bot to the group chat
 2. Make it an <b>admin</b>, so that it can see messages (all other rights can be restricted)
 3. You're awesome!
 
-To get a reply from the bot in the chat – @ <b>tag</b> it or <b>reply</b> to its message.
-For example: "{bot_username} write a poem about Telegram"
+Чтобы получить ответ от бота в чате – упомяните его через @ <b>тег</b> или <b>ответьте</b> на его сообщение.
+Например: "{bot_username} напиши стих о Telegram"
 """
 
 

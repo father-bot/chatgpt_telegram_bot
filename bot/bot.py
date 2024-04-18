@@ -43,12 +43,12 @@ logger.setLevel(logging.DEBUG)
 user_semaphores = {}
 user_tasks = {}
 
-HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /help – Show help
+HELP_MESSAGE = """Команды:
+⚪ /retry – Повторно сгенерировать последний ответ бота
+⚪ /help – Показать помощь
 
-👥 Add bot to <b>group chat</b>: /help_group_chat
-🎤 You can send <b>Voice Messages</b> instead of text
+👥 Добавить бота в <b>групповой чат</b>: /help_group_chat
+🎤 Вы можете отправлять <b>голосовые сообщения</b> вместо текста
 """
 
 HELP_GROUP_CHAT_MESSAGE = """You can add bot to any <b>group chat</b> to help and entertain its participants!

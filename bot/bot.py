@@ -45,13 +45,8 @@ user_tasks = {}
 
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
-⚪ /mode – Select chat mode
-⚪ /settings – Show settings
-⚪ /balance – Show balance
 ⚪ /help – Show help
 
-🎨 Generate images from text prompts in <b>👩‍🎨 Artist</b> /mode
 👥 Add bot to <b>group chat</b>: /help_group_chat
 🎤 You can send <b>Voice Messages</b> instead of text
 """
@@ -840,8 +835,8 @@ def run_bot() -> None:
         user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
-    # application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
-    # application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
+    application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
+    application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
     application.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND & user_filter, unsupport_message_handle))

@@ -43,6 +43,8 @@ logger.setLevel(logging.DEBUG)
 user_semaphores = {}
 user_tasks = {}
 
+PLACEHOLDER_MESSAGE = "Думаю 🤔, пожалуйста подождите немного ..."
+
 HELP_MESSAGE = """Команды:
 ⚪ /retry – Повторно сгенерировать последний ответ бота
 ⚪ /help – Показать помощь
@@ -53,13 +55,13 @@ HELP_MESSAGE = """Команды:
 
 HELP_GROUP_CHAT_MESSAGE = """Вы можете добавить бота в любой <b>групповой чат</b>, чтобы помогать и развлекать его участников!
 
-Инструкции (см. <b>видео</b> ниже):
-1. Add the bot to the group chat
-2. Make it an <b>admin</b>, so that it can see messages (all other rights can be restricted)
-3. You're awesome!
+Инструкция:
+1. Добавте бота в групповой чат
+2. Сделайте его админом <b>admin</b>, с просмотром всех сообщений (остальные права не нужны)
+3. Круто!
 
 Чтобы получить ответ от бота в чате – упомяните его через @ <b>тег</b> или <b>ответьте</b> на его сообщение.
-Например: "{bot_username} напиши стих о Telegram"
+Например: '{bot_username} что такое гова и плечи'
 """
 
 
@@ -134,8 +136,8 @@ async def start_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
 
-    reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with OpenAI API 🤖\n\n"
-    # reply_text += HELP_MESSAGE
+    reply_text = "Привет! Я <b>Baren Woffet</b> настроенный отвечать по книге ТРЕЙДИНГ В ЧАЙНИКЕ 2.0 🤖\n\n"
+    reply_text += HELP_MESSAGE
 
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
     await show_chat_modes_handle(update, context)
@@ -156,7 +158,7 @@ async def help_group_chat_handle(update: Update, context: CallbackContext):
      text = HELP_GROUP_CHAT_MESSAGE.format(bot_username="@" + context.bot.username)
 
      await update.message.reply_text(text, parse_mode=ParseMode.HTML)
-     await update.message.reply_video(config.help_group_chat_video_path)
+    #  await update.message.reply_video(config.help_group_chat_video_path)
 
 
 async def retry_handle(update: Update, context: CallbackContext):
@@ -373,7 +375,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
         try:
             # send placeholder message to user
-            placeholder_message = await update.message.reply_text("...")
+            placeholder_message = await update.message.reply_text(PLACEHOLDER_MESSAGE)
 
             # send typing action
             await update.message.chat.send_action(action="typing")
@@ -558,7 +560,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
-    db.set_user_attribute(user_id, "current_model", "gpt-3.5-turbo")
+    db.set_user_attribute(user_id, "current_model", "open-ai-assistant")
 
     db.start_new_dialog(user_id)
     await update.message.reply_text("Starting new dialog ✅")

@@ -43,6 +43,7 @@ user_tasks = {}
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
 ⚪ /new – Start new dialog
+⚪ /remove_all_history – Remove all history
 ⚪ /mode – Select chat mode
 ⚪ /settings – Show settings
 ⚪ /balance – Show balance
@@ -334,7 +335,7 @@ async def unsupport_message_handle(update: Update, context: CallbackContext, mes
     await update.message.reply_text(error_text)
     return
 
-async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
+async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=False):
     # check if bot was mentioned (for group chats)
     if not await is_bot_mentioned(update, context):
         return
@@ -665,7 +666,7 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     chat_mode = query.data.split("|")[1]
 
     db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
-    db.start_new_dialog(user_id)
+    db.try_resume_dialog(user_id, chat_mode)
 
     await context.bot.send_message(
         update.callback_query.message.chat.id,
@@ -676,6 +677,8 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
 def get_settings_menu(user_id: int):
     current_model = db.get_user_attribute(user_id, "current_model")
+    if current_model not in config.models['available_text_models']:
+        current_model = config.models['available_text_models'][0]
     text = config.models["info"][current_model]["description"]
 
     text += "\n\n"
@@ -720,7 +723,6 @@ async def set_settings_handle(update: Update, context: CallbackContext):
 
     _, model_key = query.data.split("|")
     db.set_user_attribute(user_id, "current_model", model_key)
-    db.start_new_dialog(user_id)
 
     text, reply_markup = get_settings_menu(user_id)
     try:
@@ -808,11 +810,21 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
     except:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
+async def remove_all_history_handle(update: Update, context: CallbackContext):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    user_id = update.message.from_user.id
+    db.remove_all_dialogs(user_id)
+    await update.message.reply_text("Cleared history ✅")
+    db.start_new_dialog(user_id)
+    await update.message.reply_text("Starting new dialog ✅")
+
+    
 async def post_init(application: Application):
     await application.bot.set_my_commands([
         BotCommand("/new", "Start new dialog"),
         BotCommand("/mode", "Select chat mode"),
         BotCommand("/retry", "Re-generate response for previous query"),
+        BotCommand("/remove_all_history", "Remove all history"),
         BotCommand("/balance", "Show balance"),
         BotCommand("/settings", "Show settings"),
         BotCommand("/help", "Show help message"),
@@ -861,6 +873,7 @@ def run_bot() -> None:
     application.add_handler(CallbackQueryHandler(set_settings_handle, pattern="^set_settings"))
 
     application.add_handler(CommandHandler("balance", show_balance_handle, filters=user_filter))
+    application.add_handler(CommandHandler("remove_all_history", remove_all_history_handle, filters=user_filter))
 
     application.add_error_handler(error_handle)
 

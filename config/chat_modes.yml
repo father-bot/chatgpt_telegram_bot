@@ -118,6 +118,6 @@ movie_expert:
   parse_mode: html
 
 chat_with_document:
-  name: 📜 Document
+  name: 📜 Chat With PDF or CSV
   welcome_message: 📜 Hi, I will read your messages with my document assistant! Let's talk about science, dimensions, and whatever else you want!
   parse_mode: html

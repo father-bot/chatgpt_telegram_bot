@@ -33,6 +33,25 @@ import openai_utils
 
 import base64
 
+from langchain import PromptTemplate
+import streamlit as st
+from dotenv import load_dotenv
+import pickle
+from PyPDF2 import PdfReader
+from streamlit_extras.add_vertical_space import add_vertical_space
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
+from langchain.chains.question_answering import load_qa_chain
+from langchain.callbacks import get_openai_callback
+import os
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.memory import ConversationBufferMemory
+import csv
+
 # setup
 db = database.Database()
 logger = logging.getLogger(__name__)
@@ -338,29 +357,85 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     # check if bot was mentioned (for group chats)
     if not await is_bot_mentioned(update, context):
         return
-
-    # check if message is edited
-    if update.edited_message is not None:
-        await edited_message_handle(update, context)
-        return
-
-    _message = message or update.message.text
-
-    # remove bot mention (in group chats)
-    if update.message.chat.type != "private":
-        _message = _message.replace("@" + context.bot.username, "").strip()
-
     await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context): return
+    chat_mode = db.get_user_attribute(update.message.from_user.id, "current_chat_mode")
+    if chat_mode == "chat_with_document":
+        placeholder_message = await update.message.reply_text("processing...")
+            
+        user_id = update.message.from_user.id
+        
+        filename = f"{user_id}.pkl"
+        if os.path.exists(filename):
+            with open(f"{user_id}.pkl", "rb") as f:
+                VectorStore = pickle.load(f)
 
-    user_id = update.message.from_user.id
-    chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+                query = message or update.message.text
 
-    if chat_mode == "artist":
-        await generate_image_handle(update, context, message=message)
-        return
+                if query:
+                    docs = VectorStore.similarity_search(query=query, k=3)
 
-    current_model = db.get_user_attribute(user_id, "current_model")
+                    template = """
+                        - You are a chatbot named AL having a conversation with a human.
+                        - Your name is AL.
+                        - Your act like a teacher.
+                        - Always remind to do your own research.
+                        - You have to be friendly.
+                        - You are talking to a human.
+                        - You NEVER answer that your are an AI language model.
+                        - If you don't know the answer truthfully say you don't have an answer. Don't try to make up an answer.
+                        - Always reply in the same language you are being asked.
+
+                        Given the following extracted parts of a long document and a question, create a final answer.
+
+                        {context}
+
+                        {chat_history}
+                        Human: {question}
+                        Chatbot:"""
+
+                    prompt = PromptTemplate(
+                        input_variables=["chat_history", "question", "context"], 
+                        template=template
+                    )
+
+                if query:
+                    docs = VectorStore.similarity_search(query=query, k=3)
+
+                    llm = ChatOpenAI(model_name=db.get_user_attribute(user_id, "current_model"),streaming=True, callbacks=[StreamingStdOutCallbackHandler()], temperature=0.5)
+                    memory = ConversationBufferMemory(memory_key="chat_history",input_key="question")
+                    chain = load_qa_chain(llm=llm, chain_type="stuff", memory=memory, prompt=prompt)
+                    with get_openai_callback() as cb:
+                        await update.message.chat.send_action(action="typing")
+                        response = chain.run(input_documents=docs, question=query)
+                
+                # send telegram chat
+                await context.bot.edit_message_text(response, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=ParseMode.HTML)
+        else:
+            await context.bot.edit_message_text("Please upload .pdf or .csv file", chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=ParseMode.HTML)
+
+    else:
+        # check if message is edited
+        if update.edited_message is not None:
+            await edited_message_handle(update, context)
+            return
+
+        _message = message or update.message.text
+
+        # remove bot mention (in group chats)
+        if update.message.chat.type != "private":
+            _message = _message.replace("@" + context.bot.username, "").strip()
+
+        await register_user_if_not_exists(update, context, update.message.from_user)
+        if await is_previous_message_not_answered_yet(update, context): return
+
+        user_id = update.message.from_user.id
+        chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+
+        if chat_mode == "artist":
+            await generate_image_handle(update, context, message=message)
+            return
+
+        current_model = db.get_user_attribute(user_id, "current_model")
 
     async def message_handle_fn():
         # new dialog timeout
@@ -453,9 +528,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         # send message if some messages were removed from the context
         if n_first_dialog_messages_removed > 0:
             if n_first_dialog_messages_removed == 1:
-                text = "✍️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed from the context.\n Send /new command to start new dialog"
+                    text = "✍️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed from the context.\n Send new message to start new dialog"
             else:
-                text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
+                text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send new message command to start new dialog"
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
@@ -818,6 +893,99 @@ async def post_init(application: Application):
         BotCommand("/help", "Show help message"),
     ])
 
+async def handle_file(update, context):
+    # check if bot was mentioned (for group chats)
+    if not await is_bot_mentioned(update, context):
+        return
+    await register_user_if_not_exists(update.callback_query, context, update.message.from_user)
+    user_id = update.message.from_user.id
+
+    chat_mode = 'chat_with_document'
+
+    db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
+    db.start_new_dialog(user_id)
+
+    # Get the PDF file from the user's message
+    file = update.message.document
+    file_type = ''
+    user_id = update.message.from_user.id
+
+    await update.message.chat.send_action(action="typing")
+    placeholder_message = await update.message.reply_text("Sedang memproses data...")
+
+
+    if file is not None:
+        # Download the file
+        file_path = f"{user_id}.pdf"
+        pdf_file = await context.bot.get_file(update.message.document)
+        await pdf_file.download_to_drive(file_path)
+
+        file_extension = os.path.splitext(file.file_name)[1].lower()
+
+        if file_extension == ".pdf":
+            # Process PDF file
+            text = pdf_to_text(file_path)
+
+        elif file_extension == ".csv":
+            # Process CSV file
+            text = csv_to_text(file_path)
+
+        else:
+            # Unsupported file format
+            await placeholder_message.edit_text("Unsupported file format. Please upload a PDF or CSV file.")
+        if file_extension == ".pdf" or file_extension == ".csv":
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=500,
+                length_function=len
+            )
+            chunks = text_splitter.split_text(text=text)
+
+            pdf_name = os.path.basename(file_path)
+            pdf_name_without_extension = os.path.splitext(pdf_name)[0]
+
+            embeddings = OpenAIEmbeddings()
+            VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
+
+            query = "Berikan saya beberapa list contoh pertanyaan yang bisa anda jawab dengan contexts yang saya berikan, jika tidak bisa memberikan list pertanyaan, jawab dengan 'silahkan bertanya'"
+
+            with open(f"{pdf_name_without_extension}.pkl", "wb") as f:
+                pickle.dump(VectorStore, f)
+
+                await context.bot.edit_message_text("harap tunggu sebentar...", chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=ParseMode.HTML)
+
+                if query:
+                    docs = VectorStore.similarity_search(query=query, k=3)
+
+                    llm = ChatOpenAI(model_name='gpt-3.5-turbo',streaming=True, callbacks=[StreamingStdOutCallbackHandler()], temperature=0.5)
+                    chain = load_qa_chain(llm=llm, chain_type="stuff")
+                    with get_openai_callback() as cb:
+                        await update.message.chat.send_action(action="typing")
+                        response = chain.run(input_documents=docs, question=query)
+                    await context.bot.edit_message_text(response, chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=ParseMode.HTML)
+    else:
+        await context.bot.edit_message_text("Please upload a PDF file.", chat_id=placeholder_message.chat_id, message_id=placeholder_message.message_id, parse_mode=ParseMode.HTML)
+
+def pdf_to_text(file_path):
+    text = ""
+    with open(file_path, 'rb') as file:
+        pdf_reader = PdfReader(file)
+
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+
+    return text
+
+def csv_to_text(file_path):
+    text = ""
+    with open(file_path, 'r') as csv_file:
+        csv_reader = csv.reader(csv_file)
+        for row in csv_reader:
+            row_text = " ".join(row)
+            text += row_text + "\n"
+
+    return text
+
 def run_bot() -> None:
     application = (
         ApplicationBuilder()
@@ -850,6 +1018,8 @@ def run_bot() -> None:
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
     application.add_handler(CommandHandler("cancel", cancel_handle, filters=user_filter))
+
+    application.add_handler(MessageHandler(filters.Document.ALL, handle_file))
 
     application.add_handler(MessageHandler(filters.VOICE & user_filter, voice_message_handle))
 

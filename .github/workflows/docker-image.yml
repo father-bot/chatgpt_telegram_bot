@@ -1,0 +1,31 @@
+name: Build and Push Docker image
+
+on:
+  push:
+    branches:
+      - main  # Set the branch name according to your workflow needs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.yosbel1209 }}
+          password: ${{ secrets.Gaviotarara028@ }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: yosbel1209/chatgaviota:tagname
+

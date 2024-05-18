@@ -1,12 +1,9 @@
-import os
+import io
 import logging
 import asyncio
 import traceback
 import html
 import json
-import tempfile
-import pydub
-from pathlib import Path
 from datetime import datetime
 import openai
 
@@ -34,6 +31,7 @@ import config
 import database
 import openai_utils
 
+import base64
 
 # setup
 db = database.Database()
@@ -96,9 +94,9 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     # back compatibility for n_used_tokens field
     n_used_tokens = db.get_user_attribute(user.id, "n_used_tokens")
-    if isinstance(n_used_tokens, int):  # old format
+    if isinstance(n_used_tokens, int) or isinstance(n_used_tokens, float):  # old format
         new_n_used_tokens = {
-            "gpt-3.5-turbo-16k": {
+            "gpt-3.5-turbo": {
                 "n_input_tokens": 0,
                 "n_output_tokens": n_used_tokens
             }
@@ -195,6 +193,161 @@ async def retry_handle(update: Update, context: CallbackContext):
 
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
+async def _vision_message_handle_fn(
+    update: Update, context: CallbackContext, use_new_dialog_timeout: bool = True
+):
+    logger.info('_vision_message_handle_fn')
+    user_id = update.message.from_user.id
+    current_model = db.get_user_attribute(user_id, "current_model")
+
+    if current_model != "gpt-4-vision-preview":
+        await update.message.reply_text(
+            "🥲 Images processing is only available for <b>gpt-4-vision-preview</b> model. Please change your settings in /settings",
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+
+    # new dialog timeout
+    if use_new_dialog_timeout:
+        if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
+            db.start_new_dialog(user_id)
+            await update.message.reply_text(f"Starting new dialog due to timeout (<b>{config.chat_modes[chat_mode]['name']}</b> mode) ✅", parse_mode=ParseMode.HTML)
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    buf = None
+    if update.message.effective_attachment:
+        photo = update.message.effective_attachment[-1]
+        photo_file = await context.bot.get_file(photo.file_id)
+
+        # store file in memory, not on disk
+        buf = io.BytesIO()
+        await photo_file.download_to_memory(buf)
+        buf.name = "image.jpg"  # file extension is required
+        buf.seek(0)  # move cursor to the beginning of the buffer
+
+    # in case of CancelledError
+    n_input_tokens, n_output_tokens = 0, 0
+
+    try:
+        # send placeholder message to user
+        placeholder_message = await update.message.reply_text("...")
+        message = update.message.caption or update.message.text or ''
+
+        # send typing action
+        await update.message.chat.send_action(action="typing")
+
+        dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
+        parse_mode = {"html": ParseMode.HTML, "markdown": ParseMode.MARKDOWN}[
+            config.chat_modes[chat_mode]["parse_mode"]
+        ]
+
+        chatgpt_instance = openai_utils.ChatGPT(model=current_model)
+        if config.enable_message_streaming:
+            gen = chatgpt_instance.send_vision_message_stream(
+                message,
+                dialog_messages=dialog_messages,
+                image_buffer=buf,
+                chat_mode=chat_mode,
+            )
+        else:
+            (
+                answer,
+                (n_input_tokens, n_output_tokens),
+                n_first_dialog_messages_removed,
+            ) = await chatgpt_instance.send_vision_message(
+                message,
+                dialog_messages=dialog_messages,
+                image_buffer=buf,
+                chat_mode=chat_mode,
+            )
+
+            async def fake_gen():
+                yield "finished", answer, (
+                    n_input_tokens,
+                    n_output_tokens,
+                ), n_first_dialog_messages_removed
+
+            gen = fake_gen()
+
+        prev_answer = ""
+        async for gen_item in gen:
+            (
+                status,
+                answer,
+                (n_input_tokens, n_output_tokens),
+                n_first_dialog_messages_removed,
+            ) = gen_item
+
+            answer = answer[:4096]  # telegram message limit
+
+            # update only when 100 new symbols are ready
+            if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
+                continue
+
+            try:
+                await context.bot.edit_message_text(
+                    answer,
+                    chat_id=placeholder_message.chat_id,
+                    message_id=placeholder_message.message_id,
+                    parse_mode=parse_mode,
+                )
+            except telegram.error.BadRequest as e:
+                if str(e).startswith("Message is not modified"):
+                    continue
+                else:
+                    await context.bot.edit_message_text(
+                        answer,
+                        chat_id=placeholder_message.chat_id,
+                        message_id=placeholder_message.message_id,
+                    )
+
+            await asyncio.sleep(0.01)  # wait a bit to avoid flooding
+
+            prev_answer = answer
+
+        # update user data
+        if buf is not None:
+            base_image = base64.b64encode(buf.getvalue()).decode("utf-8")
+            new_dialog_message = {"user": [
+                        {
+                            "type": "text",
+                            "text": message,
+                        },
+                        {
+                            "type": "image",
+                            "image": base_image,
+                        }
+                    ]
+                , "bot": answer, "date": datetime.now()}
+        else:
+            new_dialog_message = {"user": [{"type": "text", "text": message}], "bot": answer, "date": datetime.now()}
+
+        db.set_dialog_messages(
+            user_id,
+            db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
+            dialog_id=None
+        )
+
+        db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+
+    except asyncio.CancelledError:
+        # note: intermediate token updates only work when enable_message_streaming=True (config.yml)
+        db.update_n_used_tokens(user_id, current_model, n_input_tokens, n_output_tokens)
+        raise
+
+    except Exception as e:
+        error_text = f"Something went wrong during completion. Reason: {e}"
+        logger.error(error_text)
+        await update.message.reply_text(error_text)
+        return
+
+async def unsupport_message_handle(update: Update, context: CallbackContext, message=None):
+    error_text = f"I don't know how to read files or videos. Send the picture in normal mode (Quick Mode)."
+    logger.error(error_text)
+    await update.message.reply_text(error_text)
+    return
 
 async def message_handle(update: Update, context: CallbackContext, message=None, use_new_dialog_timeout=True):
     # check if bot was mentioned (for group chats)
@@ -221,6 +374,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if chat_mode == "artist":
         await generate_image_handle(update, context, message=message)
         return
+
+    current_model = db.get_user_attribute(user_id, "current_model")
 
     # this branch of logic handles setup of system prompt for custom mode
     if user_id in custom_chat_mode_users:
@@ -249,7 +404,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
         # in case of CancelledError
         n_input_tokens, n_output_tokens = 0, 0
-        current_model = db.get_user_attribute(user_id, "current_model")
 
         try:
             # send placeholder message to user
@@ -297,6 +451,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             # send message to user
             prev_answer = ""
+
             async for gen_item in gen:
                 status, answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed = gen_item
 
@@ -319,7 +474,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 prev_answer = answer
 
             # update user data
-            new_dialog_message = {"user": _message, "bot": answer, "date": datetime.now()}
+            new_dialog_message = {"user": [{"type": "text", "text": _message}], "bot": answer, "date": datetime.now()}
+
             db.set_dialog_messages(
                 user_id,
                 db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
@@ -348,7 +504,19 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        task = asyncio.create_task(message_handle_fn())
+        if current_model == "gpt-4o" or update.message.photo is not None and len(update.message.photo) > 0:
+            logger.error('gpt-4o')
+            if current_model != "gpt-4o":
+                current_model = "gpt-4o"
+                db.set_user_attribute(user_id, "current_model", "gpt-4o")
+            task = asyncio.create_task(
+                _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)
+            )
+        else:
+            task = asyncio.create_task(
+                message_handle_fn()
+            )
+
         user_tasks[user_id] = task
 
         try:
@@ -387,25 +555,15 @@ async def voice_message_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     voice = update.message.voice
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_dir = Path(tmp_dir)
-        voice_ogg_path = tmp_dir / "voice.ogg"
+    voice_file = await context.bot.get_file(voice.file_id)
 
-        # download
-        voice_file = await context.bot.get_file(voice.file_id)
-        await voice_file.download_to_drive(voice_ogg_path)
+    # store file in memory, not on disk
+    buf = io.BytesIO()
+    await voice_file.download_to_memory(buf)
+    buf.name = "voice.oga"  # file extension is required
+    buf.seek(0)  # move cursor to the beginning of the buffer
 
-        # convert to mp3
-        voice_mp3_path = tmp_dir / "voice.mp3"
-        pydub.AudioSegment.from_file(voice_ogg_path).export(voice_mp3_path, format="mp3")
-
-        # transcribe
-        with open(voice_mp3_path, "rb") as f:
-            transcribed_text = await openai_utils.transcribe_audio(f)
-
-            if transcribed_text is None:
-                 transcribed_text = ""
-
+    transcribed_text = await openai_utils.transcribe_audio(buf)
     text = f"🎤: <i>{transcribed_text}</i>"
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -427,7 +585,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
     message = message or update.message.text
 
     try:
-        image_urls = await openai_utils.generate_images(message, n_images=config.return_n_generated_images)
+        image_urls = await openai_utils.generate_images(message, n_images=config.return_n_generated_images, size=config.image_size)
     except openai.error.InvalidRequestError as e:
         if str(e).startswith("Your request was rejected as a result of our safety system"):
             text = "🥲 Your request <b>doesn't comply</b> with OpenAI's usage policies.\nWhat did you write there, huh?"
@@ -450,6 +608,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    db.set_user_attribute(user_id, "current_model", "gpt-3.5-turbo")
 
     if user_id in custom_chat_mode_users:
         custom_chat_mode_users.remove(user_id)
@@ -776,6 +935,8 @@ def run_bot() -> None:
         .token(config.telegram_token)
         .concurrent_updates(True)
         .rate_limiter(AIORateLimiter(max_retries=5))
+        .http_version("1.1")
+        .get_updates_http_version("1.1")
         .post_init(post_init)
         .build()
     )
@@ -784,14 +945,19 @@ def run_bot() -> None:
     user_filter = filters.ALL
     if len(config.allowed_telegram_usernames) > 0:
         usernames = [x for x in config.allowed_telegram_usernames if isinstance(x, str)]
-        user_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
-        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids)
+        any_ids = [x for x in config.allowed_telegram_usernames if isinstance(x, int)]
+        user_ids = [x for x in any_ids if x > 0]
+        group_ids = [x for x in any_ids if x < 0]
+        user_filter = filters.User(username=usernames) | filters.User(user_id=user_ids) | filters.Chat(chat_id=group_ids)
 
     application.add_handler(CommandHandler("start", start_handle, filters=user_filter))
     application.add_handler(CommandHandler("help", help_handle, filters=user_filter))
     application.add_handler(CommandHandler("help_group_chat", help_group_chat_handle, filters=user_filter))
 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, message_handle))
+    application.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND & user_filter, message_handle))
+    application.add_handler(MessageHandler(filters.VIDEO & ~filters.COMMAND & user_filter, unsupport_message_handle))
+    application.add_handler(MessageHandler(filters.Document.ALL & ~filters.COMMAND & user_filter, unsupport_message_handle))
     application.add_handler(CommandHandler("retry", retry_handle, filters=user_filter))
     application.add_handler(CommandHandler("new", new_dialog_handle, filters=user_filter))
     application.add_handler(CommandHandler("cancel", cancel_handle, filters=user_filter))

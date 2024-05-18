@@ -1,19 +1,6 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-4o"]
+available_text_models: ["gpt-4o", "gpt-3.5-turbo"]
 
 info:
-  gpt-3.5-turbo:
-    type: chat_completion
-    name: ChatGPT
-    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
-
-    price_per_1000_input_tokens: 0.0015
-    price_per_1000_output_tokens: 0.002
-
-    scores:
-      Smart: 3
-      Fast: 5
-      Cheap: 5
-
   gpt-4o:
     type: chat_completion
     name: GPT-4
@@ -27,7 +14,20 @@ info:
       Fast: 5
       Cheap: 4
 
-  dalle-3:
+  gpt-3.5-turbo:
+    type: chat_completion
+    name: ChatGPT
+    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
+
+    price_per_1000_input_tokens: 0.0015
+    price_per_1000_output_tokens: 0.002
+
+    scores:
+      Smart: 3
+      Fast: 5
+      Cheap: 5
+
+  dalle-2:
      type: image
      price_per_1_image: 0.018  # 512x512
 

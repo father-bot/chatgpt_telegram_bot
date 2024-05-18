@@ -200,9 +200,9 @@ async def _vision_message_handle_fn(
     user_id = update.message.from_user.id
     current_model = db.get_user_attribute(user_id, "current_model")
 
-    if current_model != "gpt-4-vision-preview":
+    if current_model != "gpt-4o":
         await update.message.reply_text(
-            "🥲 Images processing is only available for <b>gpt-4-vision-preview</b> model. Please change your settings in /settings",
+            "🥲 Images processing is only available for <b>gpt-4o</b> model. Please change your settings in /settings",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -224,7 +224,7 @@ async def _vision_message_handle_fn(
         # store file in memory, not on disk
         buf = io.BytesIO()
         await photo_file.download_to_memory(buf)
-        buf.name = "image.jpg"  # file extension is required
+        buf.name = "image.png"  # file extension is required
         buf.seek(0)  # move cursor to the beginning of the buffer
 
     # in case of CancelledError
@@ -239,9 +239,12 @@ async def _vision_message_handle_fn(
         await update.message.chat.send_action(action="typing")
 
         dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
-        parse_mode = {"html": ParseMode.HTML, "markdown": ParseMode.MARKDOWN}[
-            config.chat_modes[chat_mode]["parse_mode"]
-        ]
+        if chat_mode == "custom_chat_mode":
+            parse_mode = db.get_user_attribute(user_id, "parse_mode")
+        else:
+            parse_mode = {"html": ParseMode.HTML, "markdown": ParseMode.MARKDOWN}[
+                config.chat_modes[chat_mode]["parse_mode"]
+            ]
 
         chatgpt_instance = openai_utils.ChatGPT(model=current_model)
         if config.enable_message_streaming:
@@ -250,6 +253,7 @@ async def _vision_message_handle_fn(
                 dialog_messages=dialog_messages,
                 image_buffer=buf,
                 chat_mode=chat_mode,
+                user_id=user_id
             )
         else:
             (
@@ -261,6 +265,7 @@ async def _vision_message_handle_fn(
                 dialog_messages=dialog_messages,
                 image_buffer=buf,
                 chat_mode=chat_mode,
+                user_id=user_id
             )
 
             async def fake_gen():
@@ -316,8 +321,10 @@ async def _vision_message_handle_fn(
                             "text": message,
                         },
                         {
-                            "type": "image",
-                            "image": base_image,
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base_image}"
+                            }
                         }
                     ]
                 , "bot": answer, "date": datetime.now()}
@@ -505,10 +512,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     async with user_semaphores[user_id]:
         if current_model == "gpt-4o" or update.message.photo is not None and len(update.message.photo) > 0:
-            logger.error('gpt-4o')
-            if current_model != "gpt-4o":
-                current_model = "gpt-4o"
-                db.set_user_attribute(user_id, "current_model", "gpt-4o")
             task = asyncio.create_task(
                 _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)
             )

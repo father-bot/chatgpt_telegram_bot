@@ -47,14 +47,6 @@ class ChatGPT:
                         **OPENAI_COMPLETION_OPTIONS
                     )
                     answer = r.choices[0].message["content"]
-                elif self.model == "text-davinci-003":
-                    prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-                    r = await openai.Completion.acreate(
-                        engine=self.model,
-                        prompt=prompt,
-                        **OPENAI_COMPLETION_OPTIONS
-                    )
-                    answer = r.choices[0].text
                 else:
                     raise ValueError(f"Unknown model: {self.model}")
 
@@ -124,7 +116,7 @@ class ChatGPT:
             try:
                 if self.model == "gpt-4o":
                     messages = self._generate_prompt_messages(
-                        message, dialog_messages, chat_mode, image_buffer, user_id
+                        message, dialog_messages, chat_mode, user_id, image_buffer
                     )
                     r = await openai.ChatCompletion.acreate(
                         model=self.model,
@@ -257,8 +249,10 @@ class ChatGPT:
                             "text": message,
                         },
                         {
-                            "type": "image",
-                            "image": self._encode_image(image_buffer),
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{self._encode_image(image_buffer)}"
+                            }
                         }
                     ]
                 }
@@ -310,15 +304,6 @@ class ChatGPT:
         n_output_tokens = 1 + len(encoding.encode(answer))
 
         return n_input_tokens, n_output_tokens
-
-    def _count_tokens_from_prompt(self, prompt, answer, model="text-davinci-003"):
-        encoding = tiktoken.encoding_for_model(model)
-
-        n_input_tokens = len(encoding.encode(prompt)) + 1
-        n_output_tokens = len(encoding.encode(answer))
-
-        return n_input_tokens, n_output_tokens
-
 
 async def transcribe_audio(audio_file) -> str:
     r = await openai.Audio.atranscribe("whisper-1", audio_file)

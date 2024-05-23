@@ -464,7 +464,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             logger.error(current_model)
             # What is this? ^^^
 
-            if current_model != "gpt-4o":
+            if current_model != "gpt-4o" and current_model != "gpt-4-vision-preview":
                 current_model = "gpt-4o"
                 db.set_user_attribute(user_id, "current_model", "gpt-4o")
             task = asyncio.create_task(

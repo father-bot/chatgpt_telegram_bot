@@ -65,6 +65,18 @@ info:
       smart: 5
       fast: 4
       cheap: 3
+  gpt-4o:
+    type: chat_completion
+    name: GPT-4o
+    description: GPT-4o is a special variant of GPT-4 designed for optimal performance and accuracy. Suitable for complex and detailed tasks.
+
+    price_per_1000_input_tokens: 0.03
+    price_per_1000_output_tokens: 0.06
+
+    scores:
+      smart: 5
+      fast: 2
+      cheap: 2
 
   text-davinci-003:
     type: completion

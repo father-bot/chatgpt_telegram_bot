@@ -107,7 +107,7 @@ You can be in this list:
 
 ## Contributors
 - Main contributor: @karfly
-- [Father.Bot](https://father.bot).
+- [Jadve AI](https://jadve.com).
 
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)

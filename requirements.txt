@@ -3,4 +3,12 @@ openai==0.28.1
 tiktoken>=0.3.0
 PyYAML==6.0
 pymongo==4.3.3
-python-dotenv==0.21.0
+pydub==0.25.1
+langchain==0.0.154
+PyPDF2==3.0.1
+python-dotenv==1.0.0
+streamlit==1.18.1
+faiss-cpu==1.7.4
+streamlit-extras
+urllib3==1.26.6
+altair<5

@@ -24,7 +24,7 @@ OPENAI_COMPLETION_OPTIONS = {
 
 class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo"):
-        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}, f"Unknown model: {model}"
+        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}, f"Unknown model: {model}"
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
@@ -35,7 +35,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
                     r = await aclient.chat.completions.create(model=self.model,
@@ -72,7 +72,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4","gpt-4o", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
                     r_gen = await aclient.chat.completions.create(model=self.model,
@@ -128,7 +128,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model == "gpt-4-vision-preview":
+                if self.model == "gpt-4-vision-preview" or self.model == "gpt-4o":
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -174,7 +174,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model == "gpt-4-vision-preview":
+                if self.model == "gpt-4-vision-preview" or self.model == "gpt-4o":
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -255,8 +255,12 @@ class ChatGPT:
                             "text": message,
                         },
                         {
-                            "type": "image",
-                            "image": self._encode_image(image_buffer),
+                            "type": "image_url",
+                            "image_url" : {
+                              
+                                "url": f"data:image/jpeg;base64,{self._encode_image(image_buffer)}",
+                                "detail":"high"
+                            }
                         }
                     ]
                 }
@@ -287,6 +291,9 @@ class ChatGPT:
             tokens_per_message = 3
             tokens_per_name = 1
         elif model == "gpt-4-vision-preview":
+            tokens_per_message = 3
+            tokens_per_name = 1
+        elif model == "gpt-4o":
             tokens_per_message = 3
             tokens_per_name = 1
         else:

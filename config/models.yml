@@ -1,16 +1,38 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "text-davinci-003", "gpt-4o"]
+available_text_models:
+  [
+    "gpt-4o-mini",
+    "gpt-3.5-turbo-16k",
+    "gpt-4-1106-preview",
+    "gpt-4-vision-preview",
+    "gpt-4",
+    "text-davinci-003",
+    "gpt-4o",
+  ]
 
 info:
-  gpt-3.5-turbo:
+  gpt-4o-mini:
     type: chat_completion
-    name: ChatGPT
-    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
+    name: GPT-4O-MINI
+    description: ChatGPT 4o mini. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks.
 
-    price_per_1000_input_tokens: 0.0015
-    price_per_1000_output_tokens: 0.002
+    price_per_1000_input_tokens: 0.00015
+    price_per_1000_output_tokens: 0.0006
 
     scores:
-      Smart: 3
+      Smart: 5
+      Fast: 5
+      Cheap: 5
+
+  gpt-3.5-turbo:
+    type: chat_completion
+    name: GPT-3.5 Turbo
+    description: Old. Dont use this.
+
+    price_per_1000_input_tokens: 0.003
+    price_per_1000_output_tokens: 0.004
+
+    scores:
+      Smart: 1
       Fast: 5
       Cheap: 5
 
@@ -92,8 +114,8 @@ info:
       Cheap: 3
 
   dalle-2:
-     type: image
-     price_per_1_image: 0.018  # 512x512
+    type: image
+    price_per_1_image: 0.018 # 512x512
 
   whisper:
     type: audio

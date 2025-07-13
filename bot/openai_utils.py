@@ -25,8 +25,8 @@ OPENAI_COMPLETION_OPTIONS = {
 
 
 class ChatGPT:
-    def __init__(self, model="gpt-3.5-turbo"):
-        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}, f"Unknown model: {model}"
+    def __init__(self, model="gpt-4o-mini"):
+        assert model in {"text-davinci-003", "gpt-3.5-turbo-16k", "gpt-4o-mini", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}, f"Unknown model: {model}"
         self.model = model
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
@@ -37,7 +37,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-4o-mini", "gpt-4", "gpt-4o", "gpt-4-1106-preview", "gpt-4-vision-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
                     r = await openai.ChatCompletion.acreate(
@@ -78,7 +78,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4","gpt-4o", "gpt-4-1106-preview"}:
+                if self.model in {"gpt-3.5-turbo-16k", "gpt-4o-mini", "gpt-4","gpt-4o", "gpt-4-1106-preview"}:
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
                     r_gen = await openai.ChatCompletion.acreate(
@@ -186,7 +186,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model == "gpt-4-vision-preview" or self.model == "gpt-4o":
+                if self.model in ["gpt-4-vision-preview", "gpt-4o", "gpt-4o-mini"]:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -289,13 +289,13 @@ class ChatGPT:
         answer = answer.strip()
         return answer
 
-    def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
+    def _count_tokens_from_messages(self, messages, answer, model="gpt-4o-mini"):
         encoding = tiktoken.encoding_for_model(model)
 
         if model == "gpt-3.5-turbo-16k":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
-        elif model == "gpt-3.5-turbo":
+        elif model == "gpt-4o-mini":
             tokens_per_message = 4
             tokens_per_name = -1
         elif model == "gpt-4":

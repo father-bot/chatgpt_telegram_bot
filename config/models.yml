@@ -75,8 +75,8 @@ info:
 
     scores:
       smart: 5
-      fast: 2
-      cheap: 2
+      fast: 4
+      cheap: 4
 
   text-davinci-003:
     type: completion

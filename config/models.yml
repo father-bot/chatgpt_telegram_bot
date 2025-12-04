@@ -49,9 +49,9 @@ info:
     price_per_1000_output_tokens: 0.03
 
     scores:
-      smart: 5
-      fast: 4
-      cheap: 3
+      Smart: 5
+      Fast: 4
+      Cheap: 3
 
   gpt-4-vision-preview:
     type: chat_completion
@@ -62,9 +62,9 @@ info:
     price_per_1000_output_tokens: 0.03
 
     scores:
-      smart: 5
-      fast: 4
-      cheap: 3
+      Smart: 5
+      Fast: 4
+      Cheap: 3
   gpt-4o:
     type: chat_completion
     name: GPT-4o
@@ -74,9 +74,9 @@ info:
     price_per_1000_output_tokens: 0.015
 
     scores:
-      smart: 5
-      fast: 4
-      cheap: 4
+      Smart: 5
+      Fast: 4
+      Cheap: 4
 
   text-davinci-003:
     type: completion

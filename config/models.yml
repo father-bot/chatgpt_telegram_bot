@@ -1,4 +1,4 @@
-available_text_models: ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "text-davinci-003", "gpt-4o"]
+available_text_models: ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "text-davinci-003", "gpt-4o", "gpt-4o-mini"]
 
 info:
   gpt-3.5-turbo:
@@ -77,6 +77,19 @@ info:
       Smart: 5
       Fast: 4
       Cheap: 4
+
+  gpt-4o-mini:
+    type: chat_completion
+    name: GPT-4o mini
+    description: GPT-4o mini is a <b>fast</b> and <b>affordable</b> small model. It's smarter and cheaper than GPT-3.5 Turbo and supports image understanding.
+
+    price_per_1000_input_tokens: 0.00015
+    price_per_1000_output_tokens: 0.0006
+
+    scores:
+      Smart: 4
+      Fast: 5
+      Cheap: 5
 
   text-davinci-003:
     type: completion

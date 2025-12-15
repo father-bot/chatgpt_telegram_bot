@@ -51,7 +51,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
 - *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
 - *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
-- *2 Apt 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
+- *2 Apr 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
 - Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support
 
 ## Bot commands

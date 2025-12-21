@@ -1,5 +1,8 @@
 FROM python:3.8-slim
 
+# flush stdout/stderr immediately so logs show up in `docker logs`
+ENV PYTHONUNBUFFERED=1
+
 RUN \
     set -eux; \
     apt-get update; \

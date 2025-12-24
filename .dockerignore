@@ -1,2 +1,14 @@
+.git
+.gitignore
 mongodb
-  
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# local secrets / config (mounted at runtime instead)
+config/config.yml
+config/config.env

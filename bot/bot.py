@@ -123,7 +123,7 @@ async def is_bot_mentioned(update: Update, context: CallbackContext):
          if message.reply_to_message is not None:
              if message.reply_to_message.from_user.id == context.bot.id:
                  return True
-     except:
+     except Exception:
          return True
      else:
          return False
@@ -804,7 +804,7 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
             except telegram.error.BadRequest:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
-    except:
+    except Exception:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
 async def post_init(application: Application):

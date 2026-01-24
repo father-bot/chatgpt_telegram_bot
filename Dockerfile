@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.12-slim
 
 # flush stdout/stderr immediately so logs show up in `docker logs`
 ENV PYTHONUNBUFFERED=1
@@ -15,7 +15,7 @@ RUN \
     ; \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir -U pip && pip3 install --no-cache-dir -U wheel && pip3 install --no-cache-dir -U setuptools==59.5.0
+RUN pip3 install --no-cache-dir -U pip && pip3 install --no-cache-dir -U wheel && pip3 install --no-cache-dir -U setuptools
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && rm -r /tmp/requirements.txt
 

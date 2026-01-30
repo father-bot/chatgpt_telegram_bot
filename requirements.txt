@@ -1,4 +1,4 @@
-python-telegram-bot[rate-limiter]==20.1
+python-telegram-bot[rate-limiter]==20.8
 openai>=1.40.0,<2.0.0
 tiktoken>=0.7.0
 PyYAML==6.0

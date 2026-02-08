@@ -3,4 +3,4 @@ openai>=1.40.0,<2.0.0
 tiktoken>=0.7.0
 PyYAML==6.0.2
 pymongo==4.6.3
-python-dotenv==0.21.0
+python-dotenv==1.0.1

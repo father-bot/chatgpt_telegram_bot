@@ -22,7 +22,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - No request limits
 - Message streaming (watch demo)
 - GPT-4 and GPT-4 Turbo support
-- GPT-4o and GPT-4o mini support
+- GPT-4o and GPT-4o mini support (GPT-4o mini is the default model)
 - GPT-4 Vision support
 - Group Chat support (/help_group_chat to get instructions)
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
@@ -53,6 +53,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
 - *2 Apr 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
 - Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support
+- Migrated to the [OpenAI Python 1.x SDK](https://github.com/openai/openai-python); `gpt-4o-mini` is now the default model and the Docker image runs on Python 3.12. See [CHANGELOG.md](CHANGELOG.md)
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer

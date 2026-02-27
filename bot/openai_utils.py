@@ -253,7 +253,12 @@ class ChatGPT:
         return answer
 
     def _count_tokens_from_messages(self, messages, answer, model="gpt-3.5-turbo"):
-        encoding = tiktoken.encoding_for_model(model)
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            # models not known to tiktoken (e.g. Claude or other models routed
+            # via OpenRouter) fall back to a modern encoding for an estimate
+            encoding = tiktoken.get_encoding("o200k_base")
 
         if model == "gpt-3.5-turbo-16k":
             tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -277,7 +282,9 @@ class ChatGPT:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            raise ValueError(f"Unknown model: {model}")
+            # default for newer OpenAI / third-party (OpenRouter) chat models
+            tokens_per_message = 3
+            tokens_per_name = 1
 
         # input
         n_input_tokens = 0

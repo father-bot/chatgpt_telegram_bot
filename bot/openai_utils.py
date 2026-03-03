@@ -12,7 +12,29 @@ openai_client = AsyncOpenAI(
     api_key=config.openai_api_key,
     base_url=config.openai_api_base,
 )
+
+# optional OpenRouter client (OpenAI-compatible) for models declared with
+# "provider: openrouter" in config/models.yml (e.g. Claude or other vendors)
+openrouter_client = None
+if config.openrouter_api_key:
+    openrouter_client = AsyncOpenAI(
+        api_key=config.openrouter_api_key,
+        base_url=config.openrouter_api_base,
+    )
+
 logger = logging.getLogger(__name__)
+
+
+def _get_client_for_model(model):
+    provider = config.models["info"].get(model, {}).get("provider", "openai")
+    if provider == "openrouter":
+        if openrouter_client is None:
+            raise ValueError(
+                "OpenRouter API key is not configured. "
+                "Set openrouter_api_key in config/config.yml"
+            )
+        return openrouter_client
+    return openai_client
 
 
 OPENAI_COMPLETION_OPTIONS = {
@@ -29,6 +51,7 @@ class ChatGPT:
     def __init__(self, model="gpt-4o-mini"):
         assert model in config.models["info"], f"Unknown model: {model}"
         self.model = model
+        self._client = _get_client_for_model(model)
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -41,7 +64,7 @@ class ChatGPT:
                 if config.models["info"][self.model]["type"] == "chat_completion":
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r = await openai_client.chat.completions.create(
+                    r = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -74,7 +97,7 @@ class ChatGPT:
                 if config.models["info"][self.model]["type"] == "chat_completion":
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r_gen = await openai_client.chat.completions.create(
+                    r_gen = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -120,7 +143,7 @@ class ChatGPT:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
-                    r = await openai_client.chat.completions.create(
+                    r = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -169,7 +192,7 @@ class ChatGPT:
                         message, dialog_messages, chat_mode, image_buffer
                     )
 
-                    r_gen = await openai_client.chat.completions.create(
+                    r_gen = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
                         stream=True,

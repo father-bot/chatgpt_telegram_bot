@@ -1,4 +1,4 @@
-available_text_models: ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4", "gpt-4o"]
+available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4"]
 
 info:
   gpt-3.5-turbo:
@@ -90,6 +90,20 @@ info:
       Smart: 4
       Fast: 5
       Cheap: 5
+
+  openai/gpt-5.5:
+    type: chat_completion
+    provider: openrouter
+    name: GPT-5.5
+    description: GPT-5.5 is OpenAI's latest flagship model — the smartest option for complex reasoning and coding. Routed via <b>OpenRouter</b> (requires openrouter_api_key).
+
+    price_per_1000_input_tokens: 0.005
+    price_per_1000_output_tokens: 0.03
+
+    scores:
+      Smart: 5
+      Fast: 3
+      Cheap: 2
 
   dalle-2:
      type: image

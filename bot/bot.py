@@ -684,7 +684,8 @@ def get_settings_menu(user_id: int):
 
     text += "\nSelect <b>model</b>:"
 
-    # buttons to choose models
+    # buttons to choose models (chunked into rows of 2 to stay within
+    # Telegram's per-row button limit as the model list grows)
     buttons = []
     for model_key in config.models["available_text_models"]:
         title = config.models["info"][model_key]["name"]
@@ -694,7 +695,9 @@ def get_settings_menu(user_id: int):
         buttons.append(
             InlineKeyboardButton(title, callback_data=f"set_settings|{model_key}")
         )
-    reply_markup = InlineKeyboardMarkup([buttons])
+
+    keyboard = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
     return text, reply_markup
 

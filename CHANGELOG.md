@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0]
+
+### Added
+- **OpenRouter provider support**: models can declare `provider: openrouter`
+  in `models.yml` and are routed through an OpenAI-compatible OpenRouter
+  client. New `openrouter_api_key` / `openrouter_api_base` config options.
+- **Anthropic Claude models** via OpenRouter: Claude Opus 4.8, Claude Sonnet
+  and Claude Haiku.
+- OpenAI `gpt-5.5` (via OpenRouter).
+
+### Changed
+- Chat models are now dispatched by their `type` in `models.yml` instead of
+  hardcoded model-name lists, so adding a model is a config-only change.
+- Token counting falls back to the `o200k_base` encoding for models unknown
+  to `tiktoken` (e.g. Claude).
+- The `/settings` model picker lays buttons out in rows of two to stay within
+  Telegram's per-row inline-button limit.
+
 ## [1.0.0]
 
 ### Added

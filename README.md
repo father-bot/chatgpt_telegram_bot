@@ -23,6 +23,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - Message streaming (watch demo)
 - GPT-4 and GPT-4 Turbo support
 - GPT-4o and GPT-4o mini support (GPT-4o mini is the default model)
+- Newest models incl. GPT-5.5 and Anthropic Claude (Opus / Sonnet / Haiku) via [OpenRouter](https://openrouter.ai/)
 - GPT-4 Vision support
 - Group Chat support (/help_group_chat to get instructions)
 - DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
@@ -54,6 +55,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - *2 Apr 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
 - Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support
 - Migrated to the [OpenAI Python 1.x SDK](https://github.com/openai/openai-python); `gpt-4o-mini` is now the default model and the Docker image runs on Python 3.12. See [CHANGELOG.md](CHANGELOG.md)
+- Added [OpenRouter](https://openrouter.ai/) provider support — use **Anthropic Claude** (Opus / Sonnet / Haiku) and **GPT-5.5** alongside OpenAI models. Set `openrouter_api_key` in `config/config.yml` and pick the model in `/settings`
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer

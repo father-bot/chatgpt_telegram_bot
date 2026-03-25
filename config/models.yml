@@ -55,6 +55,7 @@ info:
 
   gpt-4-vision-preview:
     type: chat_completion
+    vision: true
     name: GPT-4 Vision
     description: Ability to <b>understand images</b>, in addition to all other GPT-4 Turbo capabilities.
 
@@ -67,6 +68,7 @@ info:
       Cheap: 3
   gpt-4o:
     type: chat_completion
+    vision: true
     name: GPT-4o
     description: GPT-4o is a special variant of GPT-4 designed for optimal performance and accuracy. Suitable for complex and detailed tasks.
 
@@ -80,6 +82,7 @@ info:
 
   gpt-4o-mini:
     type: chat_completion
+    vision: true
     name: GPT-4o mini
     description: GPT-4o mini is a <b>fast</b> and <b>affordable</b> small model. It's smarter and cheaper than GPT-3.5 Turbo and supports image understanding.
 
@@ -94,6 +97,7 @@ info:
   openai/gpt-5.5:
     type: chat_completion
     provider: openrouter
+    vision: true
     name: GPT-5.5
     description: GPT-5.5 is OpenAI's latest flagship model — the smartest option for complex reasoning and coding. Routed via <b>OpenRouter</b> (requires openrouter_api_key).
 
@@ -108,6 +112,7 @@ info:
   anthropic/claude-opus-4.8:
     type: chat_completion
     provider: openrouter
+    vision: true
     name: Claude Opus 4.8
     description: Anthropic's most capable model — top-tier reasoning, coding and long-context work. Routed via <b>OpenRouter</b> (requires openrouter_api_key).
 
@@ -122,6 +127,7 @@ info:
   anthropic/claude-sonnet-latest:
     type: chat_completion
     provider: openrouter
+    vision: true
     name: Claude Sonnet
     description: Anthropic's balanced model — strong quality with good speed and price. Routed via <b>OpenRouter</b> (requires openrouter_api_key).
 
@@ -136,6 +142,7 @@ info:
   anthropic/claude-haiku-latest:
     type: chat_completion
     provider: openrouter
+    vision: true
     name: Claude Haiku
     description: Anthropic's fastest and most affordable model for everyday tasks. Routed via <b>OpenRouter</b> (requires openrouter_api_key).
 

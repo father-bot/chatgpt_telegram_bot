@@ -139,7 +139,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-4-vision-preview", "gpt-4o", "gpt-4o-mini"}:
+                if config.models["info"][self.model].get("vision", False):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
@@ -187,7 +187,7 @@ class ChatGPT:
         answer = None
         while answer is None:
             try:
-                if self.model in {"gpt-4-vision-preview", "gpt-4o", "gpt-4o-mini"}:
+                if config.models["info"][self.model].get("vision", False):
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )

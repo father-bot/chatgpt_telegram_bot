@@ -185,9 +185,9 @@ async def _vision_message_handle_fn(
     user_id = update.message.from_user.id
     current_model = db.get_user_attribute(user_id, "current_model")
 
-    if current_model != "gpt-4-vision-preview" and current_model != "gpt-4o":
+    if not config.models["info"][current_model].get("vision", False):
         await update.message.reply_text(
-            "🥲 Images processing is only available for <b>gpt-4-vision-preview</b> and <b>gpt-4o</b> model. Please change your settings in /settings",
+            "🥲 Image understanding is only available for <b>vision-capable</b> models (e.g. GPT-4o, GPT-4o mini, GPT-5.5 or Claude). Please change your model in /settings",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -459,8 +459,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     async with user_semaphores[user_id]:
-        if current_model == "gpt-4-vision-preview" or current_model == "gpt-4o" or update.message.photo is not None and len(update.message.photo) > 0:
-            if current_model != "gpt-4o" and current_model != "gpt-4-vision-preview":
+        model_supports_vision = config.models["info"][current_model].get("vision", False)
+        photo_sent = update.message.photo is not None and len(update.message.photo) > 0
+        if model_supports_vision or photo_sent:
+            if not model_supports_vision:
+                # a photo was sent but the selected model can't read images:
+                # fall back to a vision-capable default
                 current_model = "gpt-4o"
                 db.set_user_attribute(user_id, "current_model", "gpt-4o")
             task = asyncio.create_task(
@@ -469,7 +473,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         else:
             task = asyncio.create_task(
                 message_handle_fn()
-            )            
+            )
 
         user_tasks[user_id] = task
 

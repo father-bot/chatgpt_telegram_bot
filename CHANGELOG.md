@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to `tiktoken` (e.g. Claude).
 - The `/settings` model picker lays buttons out in rows of two to stay within
   Telegram's per-row inline-button limit.
+- Image understanding is now driven by a `vision: true` flag in `models.yml`,
+  so any vision-capable model (GPT-4o, GPT-4o mini, GPT-5.5, Claude) can read
+  images — no longer limited to GPT-4o / GPT-4 Vision.
 
 ## [1.0.0]
 

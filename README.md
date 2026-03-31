@@ -41,6 +41,12 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 ---
 
 ## News
+- *Mar 2026*: Added [OpenRouter](https://openrouter.ai/) provider support — use **Anthropic Claude** (Opus / Sonnet / Haiku) and **GPT-5.5** alongside OpenAI models. Set `openrouter_api_key` in `config/config.yml` and pick the model in `/settings`
+- *Feb 2026*: Migrated to the [OpenAI Python 1.x SDK](https://github.com/openai/openai-python); `gpt-4o-mini` is now the default model and the Docker image runs on Python 3.12. See [CHANGELOG.md](CHANGELOG.md)
+- *Dec 2025*: Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support
+- *2 Apr 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
+- *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
+- *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
 - *21 Apr 2023*:
     - DALLE 2 support
     - Group Chat support (/help_group_chat to get instructions)
@@ -50,12 +56,6 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - *9 Mar 2023*: Now you can easily create your own Chat Modes by editing `config/chat_modes.yml`
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
-- *1 Aug 2023*: Added OpenAI API Base to config (useful while using OpenAI-compatible API like [LocalAI](https://github.com/go-skynet/LocalAI))
-- *15 Nov 2023*: Added support of [GPT-4 Turbo](https://help.openai.com/en/articles/8555510-gpt-4-turbo)
-- *2 Apr 2024*: Added [GPT-4 Vision](https://platform.openai.com/docs/guides/vision) support
-- Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support
-- Migrated to the [OpenAI Python 1.x SDK](https://github.com/openai/openai-python); `gpt-4o-mini` is now the default model and the Docker image runs on Python 3.12. See [CHANGELOG.md](CHANGELOG.md)
-- Added [OpenRouter](https://openrouter.ai/) provider support — use **Anthropic Claude** (Opus / Sonnet / Haiku) and **GPT-5.5** alongside OpenAI models. Set `openrouter_api_key` in `config/config.yml` and pick the model in `/settings`
 
 ## Bot commands
 - `/retry` – Regenerate last bot answer

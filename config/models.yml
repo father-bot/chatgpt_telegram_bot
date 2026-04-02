@@ -1,4 +1,4 @@
-available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest", "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-vision-preview", "gpt-4"]
+available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest", "gpt-3.5-turbo", "gpt-4"]
 
 info:
   gpt-3.5-turbo:
@@ -8,19 +8,6 @@ info:
 
     price_per_1000_input_tokens: 0.0015
     price_per_1000_output_tokens: 0.002
-
-    scores:
-      Smart: 3
-      Fast: 5
-      Cheap: 5
-
-  gpt-3.5-turbo-16k:
-    type: chat_completion
-    name: GPT-16K
-    description: ChatGPT is that well-known model. It's <b>fast</b> and <b>cheap</b>. Ideal for everyday tasks. If there are some tasks it can't handle, try the <b>GPT-4</b>.
-
-    price_per_1000_input_tokens: 0.003
-    price_per_1000_output_tokens: 0.004
 
     scores:
       Smart: 3
@@ -40,32 +27,6 @@ info:
       Fast: 2
       Cheap: 2
 
-  gpt-4-1106-preview:
-    type: chat_completion
-    name: GPT-4 Turbo
-    description: GPT-4 Turbo is a <b>faster</b> and <b>cheaper</b> version of GPT-4. It's as smart as GPT-4, so you should use it instead of GPT-4.
-
-    price_per_1000_input_tokens: 0.01
-    price_per_1000_output_tokens: 0.03
-
-    scores:
-      Smart: 5
-      Fast: 4
-      Cheap: 3
-
-  gpt-4-vision-preview:
-    type: chat_completion
-    vision: true
-    name: GPT-4 Vision
-    description: Ability to <b>understand images</b>, in addition to all other GPT-4 Turbo capabilities.
-
-    price_per_1000_input_tokens: 0.01
-    price_per_1000_output_tokens: 0.03
-
-    scores:
-      Smart: 5
-      Fast: 4
-      Cheap: 3
   gpt-4o:
     type: chat_completion
     vision: true

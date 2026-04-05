@@ -33,8 +33,8 @@ info:
     name: GPT-4o
     description: GPT-4o is a special variant of GPT-4 designed for optimal performance and accuracy. Suitable for complex and detailed tasks.
 
-    price_per_1000_input_tokens: 0.005
-    price_per_1000_output_tokens: 0.015
+    price_per_1000_input_tokens: 0.0025
+    price_per_1000_output_tokens: 0.01
 
     scores:
       Smart: 5

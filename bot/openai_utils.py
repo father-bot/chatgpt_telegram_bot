@@ -341,8 +341,11 @@ async def transcribe_audio(audio_file) -> str:
     return r.text or ""
 
 
-async def generate_images(prompt, n_images=4, size="512x512"):
-    r = await openai_client.images.generate(prompt=prompt, n=n_images, size=size)
+async def generate_images(prompt, n_images=1, size="1024x1024"):
+    # dall-e-3 only supports generating one image per request
+    r = await openai_client.images.generate(
+        model="dall-e-3", prompt=prompt, n=1, size=size
+    )
     image_urls = [item.url for item in r.data]
     return image_urls
 

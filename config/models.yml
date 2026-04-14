@@ -115,9 +115,9 @@ info:
       Fast: 5
       Cheap: 4
 
-  dalle-2:
+  dalle-3:
      type: image
-     price_per_1_image: 0.018  # 512x512
+     price_per_1_image: 0.04  # 1024x1024 standard quality
 
   whisper:
     type: audio

@@ -24,9 +24,9 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - GPT-4 and GPT-4 Turbo support
 - GPT-4o and GPT-4o mini support (GPT-4o mini is the default model)
 - Newest models incl. GPT-5.5 and Anthropic Claude (Opus / Sonnet / Haiku) via [OpenRouter](https://openrouter.ai/)
-- GPT-4 Vision support
+- Image understanding (vision) — GPT-4o, GPT-4o mini, GPT-5.5 and Claude
 - Group Chat support (/help_group_chat to get instructions)
-- DALLE 2 (choose 👩‍🎨 Artist mode to generate images)
+- DALL·E 3 image generation (choose 👩‍🎨 Artist mode to generate images)
 - Voice message recognition
 - Code highlighting
 - 15 special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 👩‍🎨 Artist, 🧠 Psychologist, 🚀 Elon Musk and other. You can easily create your own chat modes by editing `config/chat_modes.yml`
@@ -41,6 +41,7 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 ---
 
 ## News
+- *Jun 2026*: Switched image generation to **DALL·E 3** (1024×1024), removed deprecated models from the menu and refreshed pricing
 - *Mar 2026*: Added [OpenRouter](https://openrouter.ai/) provider support — use **Anthropic Claude** (Opus / Sonnet / Haiku) and **GPT-5.5** alongside OpenAI models. Set `openrouter_api_key` in `config/config.yml` and pick the model in `/settings`
 - *Feb 2026*: Migrated to the [OpenAI Python 1.x SDK](https://github.com/openai/openai-python); `gpt-4o-mini` is now the default model and the Docker image runs on Python 3.12. See [CHANGELOG.md](CHANGELOG.md)
 - *Dec 2025*: Added [GPT-4o](https://platform.openai.com/docs/models/gpt-4o) and [GPT-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) support

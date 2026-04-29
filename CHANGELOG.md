@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0]
+
+### Added
+- Minimal GitHub Actions CI: installs requirements on Python 3.12 and
+  byte-compiles the bot on every push and pull request.
+
+### Changed
+- Image generation now uses **DALL·E 3** (default size 1024×1024); `/balance`
+  and pricing updated accordingly.
+- Updated `gpt-4o` pricing to current rates (0.0025 / 0.01 per 1k tokens).
+
+### Removed
+- Deprecated models `gpt-3.5-turbo-16k`, `gpt-4-1106-preview` and
+  `gpt-4-vision-preview` from the model menu (gpt-4o / gpt-4o-mini cover them).
+
 ## [1.1.0]
 
 ### Added

@@ -342,12 +342,12 @@ async def transcribe_audio(audio_file) -> str:
 
 
 async def generate_images(prompt, n_images=1, size="1024x1024"):
-    # dall-e-3 only supports generating one image per request
+    # gpt-image-1 returns base64-encoded images (no URLs), so decode to bytes
     r = await openai_client.images.generate(
-        model="dall-e-3", prompt=prompt, n=1, size=size
+        model="gpt-image-1", prompt=prompt, n=n_images, size=size
     )
-    image_urls = [item.url for item in r.data]
-    return image_urls
+    images = [base64.b64decode(item.b64_json) for item in r.data]
+    return images
 
 
 async def is_content_acceptable(prompt):

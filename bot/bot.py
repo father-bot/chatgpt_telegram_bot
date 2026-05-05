@@ -543,7 +543,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
     message = message or update.message.text
 
     try:
-        image_urls = await openai_utils.generate_images(message, n_images=config.return_n_generated_images, size=config.image_size)
+        images = await openai_utils.generate_images(message, n_images=config.return_n_generated_images, size=config.image_size)
     except openai.BadRequestError as e:
         if str(e).startswith("Your request was rejected as a result of our safety system"):
             text = "🥲 Your request <b>doesn't comply</b> with OpenAI's usage policies.\nWhat did you write there, huh?"
@@ -552,12 +552,12 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
         else:
             raise
 
-    # token usage (DALL-E 3 returns one image per request)
-    db.set_user_attribute(user_id, "n_generated_images", len(image_urls) + db.get_user_attribute(user_id, "n_generated_images"))
+    # usage accounting
+    db.set_user_attribute(user_id, "n_generated_images", len(images) + db.get_user_attribute(user_id, "n_generated_images"))
 
-    for i, image_url in enumerate(image_urls):
+    for image in images:
         await update.message.chat.send_action(action="upload_photo")
-        await update.message.reply_photo(image_url, parse_mode=ParseMode.HTML)
+        await update.message.reply_photo(io.BytesIO(image))
 
 
 async def new_dialog_handle(update: Update, context: CallbackContext):
@@ -762,9 +762,9 @@ async def show_balance_handle(update: Update, context: CallbackContext):
         details_text += f"- {model_key}: <b>{n_input_spent_dollars + n_output_spent_dollars:.03f}$</b> / <b>{n_input_tokens + n_output_tokens} tokens</b>\n"
 
     # image generation
-    image_generation_n_spent_dollars = config.models["info"]["dalle-3"]["price_per_1_image"] * n_generated_images
+    image_generation_n_spent_dollars = config.models["info"]["gpt-image-1"]["price_per_1_image"] * n_generated_images
     if n_generated_images != 0:
-        details_text += f"- DALL·E 3 (image generation): <b>{image_generation_n_spent_dollars:.03f}$</b> / <b>{n_generated_images} generated images</b>\n"
+        details_text += f"- GPT Image (image generation): <b>{image_generation_n_spent_dollars:.03f}$</b> / <b>{n_generated_images} generated images</b>\n"
 
     total_n_spent_dollars += image_generation_n_spent_dollars
 

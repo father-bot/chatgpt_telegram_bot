@@ -115,9 +115,9 @@ info:
       Fast: 5
       Cheap: 4
 
-  dalle-3:
+  gpt-image-1:
      type: image
-     price_per_1_image: 0.04  # 1024x1024 standard quality
+     price_per_1_image: 0.042  # 1024x1024, medium quality
 
   whisper:
     type: audio

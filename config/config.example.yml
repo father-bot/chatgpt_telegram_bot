@@ -5,9 +5,9 @@ openrouter_api_key: ""  # optional: needed only for models with "provider: openr
 openrouter_api_base: "https://openrouter.ai/api/v1"  # OpenRouter is OpenAI-compatible; change only if you proxy it
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as positive integers and/or channel ids as negative integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
-return_n_generated_images: 1  # DALL-E 3 supports only 1 image per request
+return_n_generated_images: 1  # number of images per /imagine request (gpt-image-1 supports more than one)
 n_chat_modes_per_page: 5
-image_size: "1024x1024" # image size for DALL-E 3 generation: 1024x1024, 1792x1024 or 1024x1792
+image_size: "1024x1024" # image size for gpt-image-1 generation: 1024x1024, 1536x1024, 1024x1536 or auto
 enable_message_streaming: true  # if set, messages will be shown to user word-by-word
 
 # Note: model prices are configured per-model in config/models.yml

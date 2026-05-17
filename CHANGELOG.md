@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   byte-compiles the bot on every push and pull request.
 
 ### Changed
-- Image generation now uses **DALL·E 3** (default size 1024×1024); `/balance`
-  and pricing updated accordingly.
+- Image generation now uses OpenAI **gpt-image-1** (default size 1024×1024);
+  images are returned as bytes and `/balance` / pricing updated accordingly.
 - Updated `gpt-4o` pricing to current rates (0.0025 / 0.01 per 1k tokens).
 
 ### Removed

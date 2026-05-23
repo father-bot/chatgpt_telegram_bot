@@ -752,6 +752,11 @@ async def show_balance_handle(update: Update, context: CallbackContext):
 
     details_text = "🏷️ Details:\n"
     for model_key in sorted(n_used_tokens_dict.keys()):
+        # skip models that are no longer configured (e.g. removed legacy models
+        # a user spent tokens on in the past) to avoid a KeyError
+        if model_key not in config.models["info"]:
+            continue
+
         n_input_tokens, n_output_tokens = n_used_tokens_dict[model_key]["n_input_tokens"], n_used_tokens_dict[model_key]["n_output_tokens"]
         total_n_used_tokens += n_input_tokens + n_output_tokens
 

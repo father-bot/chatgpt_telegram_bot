@@ -283,31 +283,10 @@ class ChatGPT:
             # via OpenRouter) fall back to a modern encoding for an estimate
             encoding = tiktoken.get_encoding("o200k_base")
 
-        if model == "gpt-3.5-turbo-16k":
-            tokens_per_message = 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-            tokens_per_name = -1  # if there's a name, the role is omitted
-        elif model == "gpt-3.5-turbo":
-            tokens_per_message = 4
-            tokens_per_name = -1
-        elif model == "gpt-4":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4-1106-preview":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4-vision-preview":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4o":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-4o-mini":
-            tokens_per_message = 3
-            tokens_per_name = 1
-        else:
-            # default for newer OpenAI / third-party (OpenRouter) chat models
-            tokens_per_message = 3
-            tokens_per_name = 1
+        # all currently supported chat models (gpt-4o, gpt-4o-mini, gpt-5.5,
+        # Claude, ...) use the same per-message overhead
+        tokens_per_message = 3
+        tokens_per_name = 1
 
         # input
         n_input_tokens = 0

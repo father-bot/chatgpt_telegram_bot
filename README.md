@@ -1,4 +1,4 @@
-# ChatGPT Telegram Bot: **GPT-4. Fast. No daily limits. Special chat modes**
+# ChatGPT Telegram Bot: **GPT-5.5 & Claude. Fast. No daily limits. Special chat modes**
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/karfly/chatgpt_telegram_bot/main/static/header.png" align="center" style="width: 100%" />
@@ -21,7 +21,6 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - Low latency replies (it usually takes about 3-5 seconds)
 - No request limits
 - Message streaming (watch demo)
-- GPT-4 and GPT-4 Turbo support
 - GPT-4o and GPT-4o mini support (GPT-4o mini is the default model)
 - Newest models incl. GPT-5.5 and Anthropic Claude (Opus / Sonnet / Haiku) via [OpenRouter](https://openrouter.ai/)
 - Image understanding (vision) — GPT-4o, GPT-4o mini, GPT-5.5 and Claude

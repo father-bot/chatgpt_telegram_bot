@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0]
+
+### Removed
+- Legacy `gpt-3.5-turbo` and `gpt-4` models from the menu and config — the
+  lineup is now gpt-4o-mini (default), gpt-5.5, gpt-4o and the Claude models.
+
+### Changed
+- Simplified the token-count overhead table (all current chat models share
+  the same overhead).
+- Refreshed the README (title and feature list) to drop legacy GPT-4 mentions.
+
+### Fixed
+- `/balance` no longer raises a `KeyError` for users with historical usage of
+  models that have since been removed from the config.
+
 ## [1.2.0]
 
 ### Added

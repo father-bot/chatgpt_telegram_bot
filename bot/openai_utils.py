@@ -327,8 +327,3 @@ async def generate_images(prompt, n_images=1, size="1024x1024"):
     )
     images = [base64.b64decode(item.b64_json) for item in r.data]
     return images
-
-
-async def is_content_acceptable(prompt):
-    r = await openai_client.moderations.create(input=prompt)
-    return not r.results[0].flagged

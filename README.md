@@ -57,6 +57,13 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 - *8 Mar 2023*: Added voice message recognition with [OpenAI Whisper API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Record a voice message and ChatGPT will answer you!
 - *2 Mar 2023*: Added support of [ChatGPT API](https://platform.openai.com/docs/guides/chat/introduction).
 
+## Models & providers
+- **OpenAI** (native API): GPT-4o, GPT-4o mini (default), GPT-5.5, plus `gpt-image-1` for image generation and Whisper for voice.
+- **Anthropic Claude** via [OpenRouter](https://openrouter.ai/): Claude Opus 4.8, Claude Sonnet and Claude Haiku.
+- Any other [OpenRouter](https://openrouter.ai/)-routed model: just set `provider: openrouter` for it in `config/models.yml` — no code changes needed.
+
+Set `openrouter_api_key` in `config/config.yml` and pick the model with `/settings`.
+
 ## Bot commands
 - `/retry` – Regenerate last bot answer
 - `/new` – Start new dialog
@@ -68,15 +75,17 @@ You can deploy your own bot, or use mine: [@jadvebot](https://t.me/jadvebot) (Ou
 ## Setup
 1. Get your [OpenAI API](https://openai.com/api/) key
 
-2. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
+2. *(optional)* Get an [OpenRouter API](https://openrouter.ai/keys) key to use **Anthropic Claude** (Opus / Sonnet / Haiku) and **GPT-5.5** alongside OpenAI models
 
-3. Edit `config/config.example.yml` to set your tokens and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
+3. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
+
+4. Edit `config/config.example.yml` to set your tokens — including `openrouter_api_key` if you want Claude / GPT-5.5 — and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
     ```bash
     mv config/config.example.yml config/config.yml
     mv config/config.example.env config/config.env
     ```
 
-4. 🔥 And now **run**:
+5. 🔥 And now **run**:
     ```bash
     docker-compose --env-file config/config.env up --build
     ```

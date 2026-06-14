@@ -1,4 +1,4 @@
-available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest"]
+available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest", "astraflow/gpt-4o", "astraflow/deepseek-r1"]
 
 info:
   gpt-4o:
@@ -88,6 +88,36 @@ info:
       Smart: 4
       Fast: 5
       Cheap: 4
+
+  astraflow/gpt-4o:
+    type: chat_completion
+    provider: astraflow
+    vision: true
+    name: GPT-4o (Astraflow)
+    description: GPT-4o routed via <b>Astraflow</b> — UCloud's OpenAI-compatible platform supporting 200+ models (requires astraflow_api_key).
+
+    price_per_1000_input_tokens: 0.0025
+    price_per_1000_output_tokens: 0.01
+
+    scores:
+      Smart: 5
+      Fast: 4
+      Cheap: 4
+
+  astraflow/deepseek-r1:
+    type: chat_completion
+    provider: astraflow
+    vision: false
+    name: DeepSeek R1 (Astraflow)
+    description: DeepSeek R1 routed via <b>Astraflow</b> — strong reasoning model at low cost (requires astraflow_api_key).
+
+    price_per_1000_input_tokens: 0.00055
+    price_per_1000_output_tokens: 0.00219
+
+    scores:
+      Smart: 5
+      Fast: 3
+      Cheap: 5
 
   gpt-image-1:
      type: image

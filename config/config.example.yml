@@ -3,6 +3,8 @@ openai_api_key: ""
 openai_api_base: null  # leave null to use default api base or you can put your own base url here
 openrouter_api_key: ""  # optional: needed only for models with "provider: openrouter" in models.yml (e.g. Claude)
 openrouter_api_base: "https://openrouter.ai/api/v1"  # OpenRouter is OpenAI-compatible; change only if you proxy it
+astraflow_api_key: ""  # optional: needed only for models with "provider: astraflow" in models.yml; global endpoint
+astraflow_api_base: "https://api-us-ca.umodelverse.ai/v1"  # Astraflow global endpoint; use https://api.modelverse.cn/v1 for China
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as positive integers and/or channel ids as negative integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 return_n_generated_images: 1  # number of images per /imagine request (gpt-image-1 supports more than one)

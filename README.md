@@ -25,7 +25,7 @@ GPT-5.5 · Anthropic Claude (Opus / Sonnet / Haiku) · Vision · Voice · Image 
 
 ---
 
-We all love [chat.openai.com](https://chat.openai.com) — but it's laggy, rate-limited, and locked behind a web UI. This project gives you the same experience **right inside Telegram**, with your own API keys and no daily limits.
+Web chatbots are great — but they're often laggy, rate-limited, and locked behind a browser tab. This project puts the best models from **OpenAI and Anthropic** **right inside Telegram**, with your own API keys and no daily limits.
 
 🚀 **Try the live bot:** [@jadvebot](https://t.me/jadvebot) · 🌐 Web: [jadve.com](https://jadve.com) — or deploy your own in two commands ([Quick start ↓](#-quick-start)).
 

@@ -22,11 +22,27 @@ if config.openrouter_api_key:
         base_url=config.openrouter_api_base,
     )
 
+# optional Astraflow client (OpenAI-compatible) for models declared with
+# "provider: astraflow" in config/models.yml
+astraflow_client = None
+if config.astraflow_api_key:
+    astraflow_client = AsyncOpenAI(
+        api_key=config.astraflow_api_key,
+        base_url=config.astraflow_api_base,
+    )
+
 logger = logging.getLogger(__name__)
 
 
 def _get_client_for_model(model):
     provider = config.models["info"].get(model, {}).get("provider", "openai")
+    if provider == "astraflow":
+        if astraflow_client is None:
+            raise ValueError(
+                "Astraflow API key is not configured. "
+                "Set astraflow_api_key in config/config.yml"
+            )
+        return astraflow_client
     if provider == "openrouter":
         if openrouter_client is None:
             raise ValueError(

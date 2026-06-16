@@ -37,6 +37,10 @@ def _get_client_for_model(model):
     return openai_client
 
 
+def _get_provider_for_model(model):
+    return config.models["info"].get(model, {}).get("provider", "openai")
+
+
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
     "max_tokens": 1000,
@@ -51,7 +55,24 @@ class ChatGPT:
     def __init__(self, model="gpt-4o-mini"):
         assert model in config.models["info"], f"Unknown model: {model}"
         self.model = model
-        self._client = _get_client_for_model(model)
+        self._provider = _get_provider_for_model(model)
+        if self._provider != "litellm":
+            self._client = _get_client_for_model(model)
+
+    async def _create_completion(self, **kwargs):
+        if self._provider == "litellm":
+            try:
+                import litellm
+            except ImportError:
+                raise RuntimeError(
+                    "Install litellm to use LiteLLM models: pip install litellm"
+                )
+            kwargs.pop("frequency_penalty", None)
+            kwargs.pop("presence_penalty", None)
+            kwargs.pop("top_p", None)
+            kwargs.pop("timeout", None)
+            return await litellm.acompletion(drop_params=True, **kwargs)
+        return await self._client.chat.completions.create(**kwargs)
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -64,7 +85,7 @@ class ChatGPT:
                 if config.models["info"][self.model]["type"] == "chat_completion":
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r = await self._client.chat.completions.create(
+                    r = await self._create_completion(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -97,7 +118,7 @@ class ChatGPT:
                 if config.models["info"][self.model]["type"] == "chat_completion":
                     messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
 
-                    r_gen = await self._client.chat.completions.create(
+                    r_gen = await self._create_completion(
                         model=self.model,
                         messages=messages,
                         stream=True,
@@ -143,7 +164,7 @@ class ChatGPT:
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, chat_mode, image_buffer
                     )
-                    r = await self._client.chat.completions.create(
+                    r = await self._create_completion(
                         model=self.model,
                         messages=messages,
                         **OPENAI_COMPLETION_OPTIONS
@@ -192,7 +213,7 @@ class ChatGPT:
                         message, dialog_messages, chat_mode, image_buffer
                     )
 
-                    r_gen = await self._client.chat.completions.create(
+                    r_gen = await self._create_completion(
                         model=self.model,
                         messages=messages,
                         stream=True,

@@ -59,7 +59,9 @@ Models are config-driven — add or remove any in [`config/models.yml`](config/m
 
 Plus `gpt-image-1` for image generation and **Whisper** for voice transcription.
 
-> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) — just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`.
+> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) -- just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`.
+>
+> You can also use any model from 100+ providers via [LiteLLM](https://github.com/BerriAI/litellm): set `provider: litellm` in `config/models.yml` and export the provider's API key as an env var (e.g. `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`). LiteLLM routes the call to the right provider automatically.
 
 ## 🎭 Chat modes
 
@@ -77,7 +79,7 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 
 **1.** Get an [OpenAI API key](https://openai.com/api/).
 
-**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**.
+**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**, or install [LiteLLM](https://github.com/BerriAI/litellm) (`pip install litellm`) to access 100+ providers (OpenAI, Anthropic, Google, Azure, AWS Bedrock, Ollama, and more) via the SDK.
 
 **3.** Get a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
@@ -86,7 +88,9 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
-# then edit config/config.yml — set telegram_token, openai_api_key (and openrouter_api_key for Claude/GPT-5.5)
+# then edit config/config.yml — set telegram_token, openai_api_key
+# optional: set openrouter_api_key for Claude/GPT-5.5 via OpenRouter
+# optional: set provider env vars (ANTHROPIC_API_KEY, etc.) for LiteLLM models
 ```
 
 **5.** 🔥 Run it:
@@ -130,7 +134,7 @@ Per-model pricing and capabilities live in [`config/models.yml`](config/models.y
 ```
 bot/
   bot.py           # Telegram handlers, streaming, commands
-  openai_utils.py  # model dispatch (OpenAI + OpenRouter), token counting, vision
+  openai_utils.py  # model dispatch (OpenAI + OpenRouter + LiteLLM), token counting, vision
   config.py        # loads config.yml / models.yml / chat_modes.yml
   database.py      # MongoDB storage for users & dialogs
 config/

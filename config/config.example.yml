@@ -3,6 +3,8 @@ openai_api_key: ""
 openai_api_base: null  # leave null to use default api base or you can put your own base url here
 openrouter_api_key: ""  # optional: needed only for models with "provider: openrouter" in models.yml (e.g. Claude)
 openrouter_api_base: "https://openrouter.ai/api/v1"  # OpenRouter is OpenAI-compatible; change only if you proxy it
+litellm_api_key: ""  # optional: needed only for models with "provider: litellm" in models.yml
+litellm_api_base: "http://localhost:4000/v1"  # LiteLLM proxy endpoint; change if your proxy runs elsewhere
 allowed_telegram_usernames: []  # if empty, the bot is available to anyone. pass a username string to allow it and/or user ids as positive integers and/or channel ids as negative integers
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
 return_n_generated_images: 1  # number of images per /imagine request (gpt-image-1 supports more than one)

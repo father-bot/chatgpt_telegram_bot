@@ -22,6 +22,15 @@ if config.openrouter_api_key:
         base_url=config.openrouter_api_base,
     )
 
+# optional LiteLLM proxy client (OpenAI-compatible) for models declared with
+# "provider: litellm" in config/models.yml
+litellm_client = None
+if config.litellm_api_key:
+    litellm_client = AsyncOpenAI(
+        api_key=config.litellm_api_key,
+        base_url=config.litellm_api_base,
+    )
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +43,13 @@ def _get_client_for_model(model):
                 "Set openrouter_api_key in config/config.yml"
             )
         return openrouter_client
+    if provider == "litellm":
+        if litellm_client is None:
+            raise ValueError(
+                "LiteLLM API key is not configured. "
+                "Set litellm_api_key in config/config.yml"
+            )
+        return litellm_client
     return openai_client
 
 

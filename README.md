@@ -59,7 +59,9 @@ Models are config-driven — add or remove any in [`config/models.yml`](config/m
 
 Plus `gpt-image-1` for image generation and **Whisper** for voice transcription.
 
-> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) — just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`.
+> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) -- just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`.
+>
+> Alternatively, route any model through a [LiteLLM proxy](https://docs.litellm.ai/docs/simple_proxy) by setting `litellm_api_key` and declaring `provider: litellm` in `config/models.yml`. This gives you access to 100+ providers (OpenAI, Anthropic, Google, Azure, AWS Bedrock, Ollama, Cohere, Mistral, and more) through a single gateway.
 
 ## 🎭 Chat modes
 
@@ -77,7 +79,7 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 
 **1.** Get an [OpenAI API key](https://openai.com/api/).
 
-**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**.
+**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**, or set up a [LiteLLM proxy](https://docs.litellm.ai/docs/simple_proxy) to access 100+ providers (OpenAI, Anthropic, Google, Azure, AWS Bedrock, Ollama, and more).
 
 **3.** Get a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
@@ -86,7 +88,9 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
-# then edit config/config.yml — set telegram_token, openai_api_key (and openrouter_api_key for Claude/GPT-5.5)
+# then edit config/config.yml — set telegram_token, openai_api_key
+# optional: set openrouter_api_key for Claude/GPT-5.5 via OpenRouter
+# optional: set litellm_api_key + litellm_api_base for models via LiteLLM proxy
 ```
 
 **5.** 🔥 Run it:
@@ -107,6 +111,8 @@ Main options in `config/config.yml`:
 | `openai_api_key` | Your OpenAI API key |
 | `openai_api_base` | Custom base URL (e.g. [LocalAI](https://github.com/go-skynet/LocalAI)); leave `null` for default |
 | `openrouter_api_key` | Needed only for `provider: openrouter` models (Claude, GPT-5.5) |
+| `litellm_api_key` | Needed only for `provider: litellm` models (any LiteLLM-proxied model) |
+| `litellm_api_base` | LiteLLM proxy URL; default `http://localhost:4000/v1` |
 | `allowed_telegram_usernames` | Whitelist of users/IDs; empty = open to everyone |
 | `new_dialog_timeout` | Seconds before a new dialog starts automatically |
 | `image_size` | `gpt-image-1` output size (`1024x1024`, `1536x1024`, `1024x1536`, `auto`) |
@@ -130,7 +136,7 @@ Per-model pricing and capabilities live in [`config/models.yml`](config/models.y
 ```
 bot/
   bot.py           # Telegram handlers, streaming, commands
-  openai_utils.py  # model dispatch (OpenAI + OpenRouter), token counting, vision
+  openai_utils.py  # model dispatch (OpenAI + OpenRouter + LiteLLM), token counting, vision
   config.py        # loads config.yml / models.yml / chat_modes.yml
   database.py      # MongoDB storage for users & dialogs
 config/

@@ -1,5 +1,5 @@
-telegram_token: ""
-openai_api_key: ""
+telegram_token: "7677946069:AAFoSRRGDvbCx18wnFsv6i-aAL6UVpJBP9Q"
+openai_api_key: "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"
 openai_api_base: null  # leave null to use default api base or you can put your own base url here
 openrouter_api_key: ""  # optional: needed only for models with "provider: openrouter" in models.yml (e.g. Claude)
 openrouter_api_base: "https://openrouter.ai/api/v1"  # OpenRouter is OpenAI-compatible; change only if you proxy it

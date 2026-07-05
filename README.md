@@ -59,7 +59,7 @@ Models are config-driven — add or remove any in [`config/models.yml`](config/m
 
 Plus `gpt-image-1` for image generation and **Whisper** for voice transcription.
 
-> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) — just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`.
+> 💡 OpenAI models use the native API. Claude and GPT-5.5 are routed through [OpenRouter](https://openrouter.ai/) — just set `openrouter_api_key` and pick the model in `/settings`. Any other OpenRouter-routed model works too: declare `provider: openrouter` in `config/models.yml`. [Requesty](https://requesty.ai/) is also supported the same way — set `requesty_api_key` and declare `provider: requesty` (model ids use the `provider/model` form, e.g. `openai/gpt-4o`, `anthropic/claude-sonnet-4-5`).
 
 ## 🎭 Chat modes
 
@@ -77,7 +77,7 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 
 **1.** Get an [OpenAI API key](https://openai.com/api/).
 
-**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**.
+**2.** *(optional)* Get an [OpenRouter API key](https://openrouter.ai/keys) to use **Claude** and **GPT-5.5**, or a [Requesty API key](https://app.requesty.ai/api-keys) to route models via [Requesty](https://requesty.ai/).
 
 **3.** Get a Telegram bot token from [@BotFather](https://t.me/BotFather).
 
@@ -86,7 +86,7 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
-# then edit config/config.yml — set telegram_token, openai_api_key (and openrouter_api_key for Claude/GPT-5.5)
+# then edit config/config.yml — set telegram_token, openai_api_key (and openrouter_api_key for Claude/GPT-5.5, or requesty_api_key for Requesty-routed models)
 ```
 
 **5.** 🔥 Run it:
@@ -107,6 +107,7 @@ Main options in `config/config.yml`:
 | `openai_api_key` | Your OpenAI API key |
 | `openai_api_base` | Custom base URL (e.g. [LocalAI](https://github.com/go-skynet/LocalAI)); leave `null` for default |
 | `openrouter_api_key` | Needed only for `provider: openrouter` models (Claude, GPT-5.5) |
+| `requesty_api_key` | Needed only for `provider: requesty` models (get a key at [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys)) |
 | `allowed_telegram_usernames` | Whitelist of users/IDs; empty = open to everyone |
 | `new_dialog_timeout` | Seconds before a new dialog starts automatically |
 | `image_size` | `gpt-image-1` output size (`1024x1024`, `1536x1024`, `1024x1536`, `auto`) |

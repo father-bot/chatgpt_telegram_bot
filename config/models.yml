@@ -1,4 +1,4 @@
-available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest"]
+available_text_models: ["gpt-4o-mini", "openai/gpt-5.5", "gpt-4o", "anthropic/claude-opus-4.8", "anthropic/claude-sonnet-latest", "anthropic/claude-haiku-latest", "openai/gpt-4o", "anthropic/claude-sonnet-4-5"]
 
 info:
   gpt-4o:
@@ -88,6 +88,36 @@ info:
       Smart: 4
       Fast: 5
       Cheap: 4
+
+  openai/gpt-4o:
+    type: chat_completion
+    provider: requesty
+    vision: true
+    name: GPT-4o (Requesty)
+    description: GPT-4o is a special variant of GPT-4 designed for optimal performance and accuracy. Suitable for complex and detailed tasks. Routed via <b>Requesty</b> (requires requesty_api_key).
+
+    price_per_1000_input_tokens: 0.0025
+    price_per_1000_output_tokens: 0.01
+
+    scores:
+      Smart: 5
+      Fast: 4
+      Cheap: 4
+
+  anthropic/claude-sonnet-4-5:
+    type: chat_completion
+    provider: requesty
+    vision: true
+    name: Claude Sonnet 4.5 (Requesty)
+    description: Anthropic's balanced model — strong quality with good speed and price. Routed via <b>Requesty</b> (requires requesty_api_key).
+
+    price_per_1000_input_tokens: 0.003
+    price_per_1000_output_tokens: 0.015
+
+    scores:
+      Smart: 5
+      Fast: 4
+      Cheap: 3
 
   gpt-image-1:
      type: image

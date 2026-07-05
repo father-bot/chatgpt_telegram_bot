@@ -22,6 +22,15 @@ if config.openrouter_api_key:
         base_url=config.openrouter_api_base,
     )
 
+# optional Requesty client (OpenAI-compatible) for models declared with
+# "provider: requesty" in config/models.yml (e.g. Claude or other vendors)
+requesty_client = None
+if config.requesty_api_key:
+    requesty_client = AsyncOpenAI(
+        api_key=config.requesty_api_key,
+        base_url=config.requesty_api_base,
+    )
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +43,13 @@ def _get_client_for_model(model):
                 "Set openrouter_api_key in config/config.yml"
             )
         return openrouter_client
+    if provider == "requesty":
+        if requesty_client is None:
+            raise ValueError(
+                "Requesty API key is not configured. "
+                "Set requesty_api_key in config/config.yml"
+            )
+        return requesty_client
     return openai_client
 
 

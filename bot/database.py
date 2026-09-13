@@ -14,6 +14,8 @@ class Database:
 
         self.user_collection = self.db["user"]
         self.dialog_collection = self.db["dialog"]
+        self.dialog_collection.create_index([("chat_id", pymongo.ASCENDING), (
+            "message_thread_id", pymongo.ASCENDING), ("start_time", pymongo.DESCENDING)], name="chat_thread_newest")
 
     def check_if_user_exists(self, user_id: int, raise_exception: bool = False):
         if self.user_collection.count_documents({"_id": user_id}) > 0:
@@ -27,14 +29,12 @@ class Database:
     def add_new_user(
         self,
         user_id: int,
-        chat_id: int,
         username: str = "",
         first_name: str = "",
         last_name: str = "",
     ):
         user_dict = {
             "_id": user_id,
-            "chat_id": chat_id,
 
             "username": username,
             "first_name": first_name,
@@ -43,7 +43,6 @@ class Database:
             "last_interaction": datetime.now(),
             "first_seen": datetime.now(),
 
-            "current_dialog_id": None,
             "current_chat_mode": "assistant",
             "current_model": config.models["available_text_models"][0],
 
@@ -56,13 +55,15 @@ class Database:
         if not self.check_if_user_exists(user_id):
             self.user_collection.insert_one(user_dict)
 
-    def start_new_dialog(self, user_id: int):
+    def start_new_dialog(self, user_id: int, chat_id: int, message_thread_id: int = None):
         self.check_if_user_exists(user_id, raise_exception=True)
 
         dialog_id = str(uuid.uuid4())
         dialog_dict = {
             "_id": dialog_id,
-            "user_id": user_id,
+            "chat_id": chat_id,
+            "message_thread_id": message_thread_id,
+            "participants": [user_id],
             "chat_mode": self.get_user_attribute(user_id, "current_chat_mode"),
             "start_time": datetime.now(),
             "model": self.get_user_attribute(user_id, "current_model"),
@@ -71,12 +72,6 @@ class Database:
 
         # add new dialog
         self.dialog_collection.insert_one(dialog_dict)
-
-        # update user's current dialog
-        self.user_collection.update_one(
-            {"_id": user_id},
-            {"$set": {"current_dialog_id": dialog_id}}
-        )
 
         return dialog_id
 
@@ -91,7 +86,8 @@ class Database:
 
     def set_user_attribute(self, user_id: int, key: str, value: Any):
         self.check_if_user_exists(user_id, raise_exception=True)
-        self.user_collection.update_one({"_id": user_id}, {"$set": {key: value}})
+        self.user_collection.update_one(
+            {"_id": user_id}, {"$set": {key: value}})
 
     def update_n_used_tokens(self, user_id: int, model: str, n_input_tokens: int, n_output_tokens: int):
         n_used_tokens_dict = self.get_user_attribute(user_id, "n_used_tokens")
@@ -107,22 +103,17 @@ class Database:
 
         self.set_user_attribute(user_id, "n_used_tokens", n_used_tokens_dict)
 
-    def get_dialog_messages(self, user_id: int, dialog_id: Optional[str] = None):
-        self.check_if_user_exists(user_id, raise_exception=True)
+    def get_dialog_messages(self, chat_id: int, message_thread_id: Optional[int] = None):
+        dialog_dict = self.dialog_collection.find_one(
+            {"chat_id": chat_id, "message_thread_id": message_thread_id},
+            sort=[("start_time", pymongo.DESCENDING)]
+        )
 
-        if dialog_id is None:
-            dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
-
-        dialog_dict = self.dialog_collection.find_one({"_id": dialog_id, "user_id": user_id})
         return dialog_dict["messages"]
 
-    def set_dialog_messages(self, user_id: int, dialog_messages: list, dialog_id: Optional[str] = None):
-        self.check_if_user_exists(user_id, raise_exception=True)
-
-        if dialog_id is None:
-            dialog_id = self.get_user_attribute(user_id, "current_dialog_id")
-
+    def set_dialog_messages(self, dialog_messages: list, user_id: int, chat_id: int, message_thread_id: Optional[int] = None):
         self.dialog_collection.update_one(
-            {"_id": dialog_id, "user_id": user_id},
-            {"$set": {"messages": dialog_messages}}
+            {"chat_id": chat_id, "message_thread_id": message_thread_id},
+            {"$set": {"messages": dialog_messages},
+                "$addToSet": {"participants": user_id}}
         )

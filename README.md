@@ -86,6 +86,8 @@ Create your own by editing [`config/chat_modes.yml`](config/chat_modes.yml).
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
+mv config/models.example.yml config/models.yml
+mv config/chat_modes.example.yml config/chat_modes.yml
 # then edit config/config.yml — set telegram_token, openai_api_key (and openrouter_api_key for Claude/GPT-5.5)
 ```
 

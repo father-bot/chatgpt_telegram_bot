@@ -142,7 +142,7 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     if db.get_user_attribute(user.id, "current_model") is None:
         db.set_user_attribute(user.id, "current_model",
-                              config.models["available_text_models"][0])
+                              config.models["default_text_model"])
 
     # back compatibility for n_used_tokens field
     n_used_tokens = db.get_user_attribute(user.id, "n_used_tokens")
@@ -358,7 +358,7 @@ async def _vision_message_handle_fn(update: Update, context: CallbackContext):
 
     except Exception as e:
         error_text = f"Something went wrong during completion. Reason: {e}"
-        logger.error(error_text)
+        logger.exception(e)
         await update.message.reply_text(error_text)
         return
 
@@ -474,7 +474,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None)
 
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
-            logger.error(error_text)
+            logger.exception(e)
             await update.message.reply_text(error_text)
             return
 
@@ -634,7 +634,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.set_user_attribute(user_id, "current_model",
-                          config.models["available_text_models"][0])
+                          config.models["default_text_model"])
 
     if update.message.chat.type == "private":
         forum_topic = await context.bot.create_forum_topic(update.message.chat_id, "New Chat")
@@ -654,7 +654,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
         await update.message.reply_text("Starting new dialog ✅")
 
         chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-        await update.message.reply_text(f"{config.chat_modes[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"{config.chat_modes["info"][chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
 
 async def cancel_handle(update: Update, context: CallbackContext):
@@ -672,18 +672,18 @@ async def cancel_handle(update: Update, context: CallbackContext):
 
 def get_chat_mode_menu(page_index: int):
     n_chat_modes_per_page = config.n_chat_modes_per_page
-    text = f"Select <b>chat mode</b> ({len(config.chat_modes)} modes available):"
+    text = f"Select <b>chat mode</b> ({len(config.chat_modes["info"])} modes available):"
 
     # buttons
-    chat_mode_keys = list(config.chat_modes.keys())
+    chat_mode_keys = list(config.chat_modes["info"].keys())
     page_chat_mode_keys = chat_mode_keys[page_index *
                                          n_chat_modes_per_page:(page_index + 1) * n_chat_modes_per_page]
 
     keyboard = []
     for chat_mode_key in page_chat_mode_keys:
-        name = config.chat_modes[chat_mode_key]["name"]
+        chat_mode_name = config.chat_modes["info"][chat_mode_key]["name"]
         keyboard.append([InlineKeyboardButton(
-            name, callback_data=f"set_chat_mode|{chat_mode_key}")])
+            chat_mode_name, callback_data=f"set_chat_mode|{chat_mode_key}")])
 
     # pagination
     if len(chat_mode_keys) > n_chat_modes_per_page:
@@ -762,7 +762,7 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
     await context.bot.send_message(
         update.callback_query.message.chat.id,
-        f"{config.chat_modes[chat_mode]['welcome_message']}",
+        f"{config.chat_modes["info"][chat_mode]['welcome_message']}",
         parse_mode=ParseMode.HTML
     )
 
@@ -782,14 +782,14 @@ def get_settings_menu(user_id: int):
     # buttons to choose models (chunked into rows of 2 to stay within
     # Telegram's per-row button limit as the model list grows)
     buttons = []
-    for model_key in config.models["available_text_models"]:
-        title = config.models["info"][model_key]["name"]
+    for model_key, model_value in config.models["info"]:
+        model_name = model_value["name"]
         if model_key == current_model:
-            title = "✅ " + title
+            model_name = "✅ " + model_name
 
         buttons.append(
             InlineKeyboardButton(
-                title, callback_data=f"set_settings|{model_key}")
+                model_name, callback_data=f"set_settings|{model_key}")
         )
 
     keyboard = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]

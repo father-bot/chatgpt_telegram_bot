@@ -43,8 +43,8 @@ class Database:
             "last_interaction": datetime.now(),
             "first_seen": datetime.now(),
 
-            "current_chat_mode": "assistant",
-            "current_model": config.models["available_text_models"][0],
+            "current_chat_mode": config.chat_modes["default_chat_mode"],
+            "current_model": config.models["default_text_mode"],
 
             "n_used_tokens": {},
 

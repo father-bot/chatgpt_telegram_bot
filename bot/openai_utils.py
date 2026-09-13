@@ -56,12 +56,12 @@ class ChatGPT:
         self._client = _get_client_for_model(model)
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
+        if chat_mode not in config.chat_modes["info"].keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         while answer is None:
             try:
                 if config.models["info"][self.model]["type"] == "chat_completion":
@@ -93,11 +93,11 @@ class ChatGPT:
         return answer, (n_input_tokens, n_output_tokens), n_first_dialog_messages_removed
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
-        if chat_mode not in config.chat_modes.keys():
+        if chat_mode not in config.chat_modes["info"].keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         try:
             if config.models["info"][self.model]["type"] == "chat_completion":
                 messages = self._generate_prompt_messages(
@@ -146,7 +146,7 @@ class ChatGPT:
     ):
         n_dialog_messages_before = len(dialog_messages)
         answer = None
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         while answer is None:
             try:
                 if config.models["info"][self.model].get("vision", False):
@@ -190,7 +190,7 @@ class ChatGPT:
         image_buffer: Optional[BytesIO] = None,
     ):
         n_dialog_messages_before = len(dialog_messages)
-        prompt = config.chat_modes[chat_mode]["prompt_start"]
+        prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         try:
             if config.models["info"][self.model].get("vision", False):
                 messages = self._generate_prompt_messages(

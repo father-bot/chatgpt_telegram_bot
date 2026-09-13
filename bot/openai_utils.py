@@ -64,7 +64,7 @@ class ChatGPT:
         prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         while answer is None:
             try:
-                if config.models["info"][self.model]["type"] == "chat_completion":
+                if config.models["info"][self.model]["type"] == "text":
                     messages = self._generate_prompt_messages(
                         message, dialog_messages, prompt)
 
@@ -99,7 +99,7 @@ class ChatGPT:
         n_dialog_messages_before = len(dialog_messages)
         prompt = config.chat_modes["info"][chat_mode]["prompt_start"]
         try:
-            if config.models["info"][self.model]["type"] == "chat_completion":
+            if config.models["info"][self.model]["type"] == "text":
                 messages = self._generate_prompt_messages(
                     message, dialog_messages, prompt)
 

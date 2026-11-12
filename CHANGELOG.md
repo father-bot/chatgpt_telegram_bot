@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Default model is now `gpt-6-luna`. OpenAI shuts down `gpt-4o` and
+  `gpt-4o-mini` on 2027-01-14 and names `gpt-6-luna` as the replacement (#528).
+  It is sent with `reasoning_effort: "none"` (set in `models.yml`), so replies
+  stay as fast and cheap as before and `temperature` is still accepted.
+- OpenAI models get `max_completion_tokens` instead of the deprecated
+  `max_tokens`; OpenRouter models still get `max_tokens`.
+- `top_p`, `frequency_penalty` and `presence_penalty` are no longer sent; they
+  were set to the API defaults.
+- `openai` minimum version 1.58.1 (first release with `reasoning_effort`).
+
+### Removed
+- `gpt-4o` and `gpt-4o-mini`. Users who had one selected are moved to the
+  default model on their next message.
+
 ## [1.3.1]
 
 ### Fixed

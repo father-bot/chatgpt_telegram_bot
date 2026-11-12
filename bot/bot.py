@@ -87,7 +87,9 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
     if user.id not in user_semaphores:
         user_semaphores[user.id] = asyncio.Semaphore(1)
 
-    if db.get_user_attribute(user.id, "current_model") is None:
+    # also moves users off models removed from models.yml (e.g. gpt-4o and
+    # gpt-4o-mini, shut down by OpenAI on 2027-01-14) to the default model
+    if db.get_user_attribute(user.id, "current_model") not in config.models["info"]:
         db.set_user_attribute(user.id, "current_model", config.models["available_text_models"][0])
 
     # back compatibility for n_used_tokens field
@@ -187,7 +189,7 @@ async def _vision_message_handle_fn(
 
     if not config.models["info"][current_model].get("vision", False):
         await update.message.reply_text(
-            "🥲 Image understanding is only available for <b>vision-capable</b> models (e.g. GPT-4o, GPT-4o mini, GPT-5.5 or Claude). Please change your model in /settings",
+            "🥲 Image understanding is only available for <b>vision-capable</b> models (e.g. GPT-6 Luna, GPT-5.5 or Claude). Please change your model in /settings",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -469,8 +471,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             if not model_supports_vision:
                 # a photo was sent but the selected model can't read images:
                 # fall back to a vision-capable default
-                current_model = "gpt-4o"
-                db.set_user_attribute(user_id, "current_model", "gpt-4o")
+                current_model = "gpt-6-luna"
+                db.set_user_attribute(user_id, "current_model", current_model)
             task = asyncio.create_task(
                 _vision_message_handle_fn(update, context, use_new_dialog_timeout=use_new_dialog_timeout)
             )
@@ -570,7 +572,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
-    db.set_user_attribute(user_id, "current_model", "gpt-4o-mini")
+    db.set_user_attribute(user_id, "current_model", config.models["available_text_models"][0])
 
     db.start_new_dialog(user_id)
     await update.message.reply_text("Starting new dialog ✅")

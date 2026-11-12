@@ -50,8 +50,7 @@ Models are config-driven — add or remove any in [`config/models.yml`](config/m
 
 | Model | Provider | Vision | Smart | Fast | Cheap | In / Out per 1K tokens |
 |---|---|:---:|:---:|:---:|:---:|---|
-| **GPT-4o mini** *(default)* | OpenAI | ✅ | 🟢🟢🟢🟢 | 🟢🟢🟢🟢🟢 | 🟢🟢🟢🟢🟢 | $0.00015 / $0.0006 |
-| **GPT-4o** | OpenAI | ✅ | 🟢🟢🟢🟢🟢 | 🟢🟢🟢🟢 | 🟢🟢🟢🟢 | $0.0025 / $0.01 |
+| **GPT-6 Luna** *(default)* | OpenAI | ✅ | 🟢🟢🟢🟢 | 🟢🟢🟢🟢🟢 | 🟢🟢🟢🟢🟢 | $0.0001 / $0.0005 |
 | **GPT-5.5** | OpenRouter | ✅ | 🟢🟢🟢🟢🟢 | 🟢🟢🟢 | 🟢🟢 | $0.005 / $0.03 |
 | **Claude Opus 4.8** | OpenRouter | ✅ | 🟢🟢🟢🟢🟢 | 🟢🟢 | 🟢🟢 | $0.005 / $0.025 |
 | **Claude Sonnet** | OpenRouter | ✅ | 🟢🟢🟢🟢🟢 | 🟢🟢🟢🟢 | 🟢🟢🟢 | $0.003 / $0.015 |

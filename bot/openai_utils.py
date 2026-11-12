@@ -37,21 +37,35 @@ def _get_client_for_model(model):
     return openai_client
 
 
+# top_p, frequency_penalty and presence_penalty are left at the API defaults
+# (1, 0, 0) by not sending them: reasoning models such as gpt-6-luna reject
+# sampling settings unless reasoning_effort is "none"
 OPENAI_COMPLETION_OPTIONS = {
     "temperature": 0.7,
-    "max_tokens": 1000,
-    "top_p": 1,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
     "timeout": 60.0,
 }
+MAX_ANSWER_TOKENS = 1000
+
+
+def _completion_options(model):
+    model_info = config.models["info"][model]
+    options = dict(OPENAI_COMPLETION_OPTIONS)
+    if model_info.get("provider", "openai") == "openai":
+        # OpenAI deprecated max_tokens, and its reasoning models reject it
+        options["max_completion_tokens"] = MAX_ANSWER_TOKENS
+    else:
+        options["max_tokens"] = MAX_ANSWER_TOKENS
+    if "reasoning_effort" in model_info:
+        options["reasoning_effort"] = model_info["reasoning_effort"]
+    return options
 
 
 class ChatGPT:
-    def __init__(self, model="gpt-4o-mini"):
+    def __init__(self, model="gpt-6-luna"):
         assert model in config.models["info"], f"Unknown model: {model}"
         self.model = model
         self._client = _get_client_for_model(model)
+        self._options = _completion_options(model)
 
     async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in config.chat_modes.keys():
@@ -67,7 +81,7 @@ class ChatGPT:
                     r = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._options
                     )
                     answer = r.choices[0].message.content
                 else:
@@ -101,7 +115,7 @@ class ChatGPT:
                         model=self.model,
                         messages=messages,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._options
                     )
 
                     answer = ""
@@ -146,7 +160,7 @@ class ChatGPT:
                     r = await self._client.chat.completions.create(
                         model=self.model,
                         messages=messages,
-                        **OPENAI_COMPLETION_OPTIONS
+                        **self._options
                     )
                     answer = r.choices[0].message.content
                 else:
@@ -196,7 +210,7 @@ class ChatGPT:
                         model=self.model,
                         messages=messages,
                         stream=True,
-                        **OPENAI_COMPLETION_OPTIONS,
+                        **self._options,
                     )
 
                     answer = ""
@@ -283,7 +297,7 @@ class ChatGPT:
             # via OpenRouter) fall back to a modern encoding for an estimate
             encoding = tiktoken.get_encoding("o200k_base")
 
-        # all currently supported chat models (gpt-4o, gpt-4o-mini, gpt-5.5,
+        # all currently supported chat models (gpt-6-luna, gpt-5.5,
         # Claude, ...) use the same per-message overhead
         tokens_per_message = 3
         tokens_per_name = 1
